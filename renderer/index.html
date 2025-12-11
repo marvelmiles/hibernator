@@ -3,9 +3,73 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hibernate Scheduler</title>
+    <title>Hibernator</title>
   </head>
   <body>
-    Hello world
+    <div id="app">
+      <h1>Hibernator</h1>
+
+      <section id="global">
+        <label>Start at login: <input id="startup" type="checkbox" /></label>
+        <label
+          >Default strict level:
+          <select id="defaultStrict">
+            <option value="very_strict">Very strict</option>
+            <option value="medium_strict">Medium strict</option>
+            <option value="less_strict">Less strict</option>
+          </select>
+        </label>
+        <button id="saveSettings">Save settings</button>
+      </section>
+
+      <hr />
+
+      <section id="setStartTime">
+        <h2>Set Boot start Time</h2>
+        <label
+          >Hour: <input id="hour" type="number" min="0" max="23" value="23"
+        /></label>
+        <label
+          >Minute: <input id="minute" type="number" min="0" max="59" value="0"
+        /></label>
+        <label
+          >Strict:
+          <select id="strict">
+            <option value="very_strict">Very strict</option>
+            <option value="medium_strict">Medium strict</option>
+            <option value="less_strict">Less strict</option>
+          </select>
+        </label>
+        <button id="set-start-time-btn">Set</button>
+      </section>
+
+      <hr />
+
+      <section id="addSchedule">
+        <h2>Add hibernate schedule</h2>
+        <label
+          >Hour: <input id="hour" type="number" min="0" max="23" value="23"
+        /></label>
+        <label
+          >Minute: <input id="minute" type="number" min="0" max="59" value="0"
+        /></label>
+        <label
+          >Strict:
+          <select id="strict">
+            <option value="very_strict">Very strict</option>
+            <option value="medium_strict">Medium strict</option>
+            <option value="less_strict">Less strict</option>
+          </select>
+        </label>
+        <button id="add">Add</button>
+      </section>
+
+      <hr />
+
+      <section id="schedules">
+        <h2>Schedules</h2>
+        <div id="scheduleList"></div>
+      </section>
+    </div>
   </body>
 </html>
