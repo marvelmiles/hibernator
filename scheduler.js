@@ -51,17 +51,25 @@ class Scheduler {
   scheduleJob(actionName, s) {
     if (actionName === "hibernate") {
       const jobs = this.schedule(s, async () => {
-        this.cancel(actionName, s.id, !!this.activeSchedule || false);
+        this.cancelJob(actionName, s.id);
 
         if (!s.repeat) {
-          const list = this.store.get(CONSTANTS.STORE_HIB_KEY, []).map((sch) =>
-            sch.id === s.id
-              ? {
+          const list = this.store
+            .get(CONSTANTS.STORE_HIB_KEY, [])
+            .map((sch) => {
+              if (sch.id === s.id) {
+                const updatedSchedule = {
                   ...sch,
                   completedTask: sch.completedTask.push(new Date().getDay()),
-                }
-              : sch
-          );
+                };
+
+                if (this.activeSchedule?.id === updatedSchedule?.id)
+                  this.activeSchedule = updatedSchedule;
+
+                return updatedSchedule;
+              }
+              return sch;
+            });
 
           this.store.set(CONSTANTS.STORE_HIB_KEY, list);
         }
@@ -119,20 +127,12 @@ class Scheduler {
     }
   }
 
-  cancel(actionName, id, filterList = true) {
+  cancelJob(actionName, id) {
     if (actionName === "hibernate") {
       if (id === undefined) {
         this.cancelJobs(actionName);
         this.store.set(CONSTANTS.STORE_HIB_KEY, []);
       } else {
-        if (filterList) {
-          const list = this.store
-            .get(CONSTANTS.STORE_HIB_KEY, [])
-            .filter((s) => s.id !== id);
-
-          this.store.set(CONSTANTS.STORE_HIB_KEY, list);
-        }
-
         const sch = this.hibSchedules.find(
           (s) => s.id === id && new Date().getDay() === s.dayIndex
         );
@@ -150,17 +150,56 @@ class Scheduler {
     }
   }
 
+  cancelSchedule(sid, actionName = "hibernate") {
+    const clearAll = sid === undefined;
+
+    if (actionName === "hibernate") {
+      const others = [];
+
+      for (let i = 0; i < this.hibSchedules.length; i++) {
+        const entity = this.hibSchedules[i];
+
+        if (clearAll) entity.job.cancel();
+        else {
+          if (entity.id === sid) {
+            entity.job.cancel();
+
+            continue;
+          }
+
+          others.push(entity);
+        }
+      }
+
+      this.hibSchedules = others;
+
+      const list = clearAll
+        ? []
+        : this.store
+            .get(CONSTANTS.STORE_HIB_KEY, [])
+            .filter((s) => s.id !== sid);
+
+      this.store.set(CONSTANTS.STORE_HIB_KEY, list);
+    }
+  }
+
   setActiveSchedule(schedule) {
     this.activeSchedule = schedule;
   }
 
   removeActiveScheduleFromList(window) {
     if (this.activeSchedule) {
-      const list = this.store
-        .get(CONSTANTS.STORE_HIB_KEY, [])
-        .filter((s) => s.id !== this.activeSchedule.id);
+      if (
+        this.activeSchedule.days.length ===
+        this.activeSchedule.completedTask.length
+      ) {
+        const list = this.store
+          .get(CONSTANTS.STORE_HIB_KEY, [])
+          .filter((s) => s.id !== this.activeSchedule.id);
 
-      this.store.set(CONSTANTS.STORE_HIB_KEY, list);
+        this.store.set(CONSTANTS.STORE_HIB_KEY, list);
+      }
+
       this.activeSchedule = null;
 
       if (window) window.webContents.send(CONSTANTS.HIB_LIST_CHANGE);

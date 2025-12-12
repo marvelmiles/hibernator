@@ -21,7 +21,7 @@
   const hibLevel = document.getElementById("hib_level");
   const hibBtn = document.getElementById("hib_btn");
   const hibList = document.getElementById("hib_list");
-  const hibDeleteAllBtn = document.getElementById("hib_delete_all");
+  const hibCancelAllBtn = document.getElementById("hib_delete_all");
   const hibSchTypes = document.querySelectorAll(
     'input[name="hib_schedule_type"]'
   );
@@ -119,7 +119,7 @@
     });
   };
 
-  hibDeleteAllBtn.onclick = async () => {
+  hibCancelAllBtn.onclick = async () => {
     await api.hibernate.cancelSchedule();
     await renderHibList();
   };

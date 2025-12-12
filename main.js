@@ -75,12 +75,8 @@ ipcMain.handle(CONSTANTS.ADD_HIB_SCHEDULE, (event, s) => {
 });
 
 ipcMain.handle(CONSTANTS.CANCEL_HIB_SCHEDULE, (event, id) => {
-  return scheduler.cancel("hibernate", id);
+  return scheduler.cancelSchedule(id, "hibernate");
 });
-
-const handleHibernation = () => {
-  hibernate();
-};
 
 ipcMain.handle(CONSTANTS.MESSAGE_DIALOG, (e, message) => {
   dialog.showErrorBox("", message);
@@ -90,12 +86,13 @@ ipcMain.handle("close-notification", (e, filterFromList) => {
   console.log("closing notification", filterFromList);
 
   closeHibernateNotification();
+
   if (filterFromList) scheduler.removeActiveScheduleFromList(mainWindow);
 });
 
 ipcMain.handle("hibernate", () => {
   console.log("hibernating...");
-  handleHibernation();
+  hibernate();
 });
 
 ipcMain.handle("snooze-hibernation", () => {
