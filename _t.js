@@ -3,7 +3,6 @@ const CONSTANTS = require("./config/constants");
 const schedule = require("node-schedule");
 const { showHibernateNotification } = require("./notificationWindow");
 const { v4: uniqId } = require("uuid");
-const { joinArr } = require("./utils/helper");
 
 class Scheduler {
   constructor(store) {
@@ -22,49 +21,40 @@ class Scheduler {
     if (actionName === "hibernate") {
       const list = this.store.get(CONSTANTS.STORE_HIB_KEY, []);
 
-      const invalid = [];
+      let message = "";
 
-      const hasConflict = (() => {
-        let sameTime = false;
+      const hasConflict = !!list.find((item) => {
+        const sameTime =
+          item.hour === schedule.hour && item.minute === schedule.minute;
 
-        const map = {};
+        const size = Math.max(item.days.length, schedule.days.length);
 
-        for (const item of list) {
-          if (!sameTime)
-            sameTime =
-              item.hour === schedule.hour && item.minute === schedule.minute;
+        for (let i = 0; i < size; i++) {
+          if (schedule.days.includes(i)) {
+            const dayWord =
+              {
+                0: "sunday",
+                1: "monday",
+                2: "tuesday",
+                3: "wednesday",
+                4: "thursday",
+                5: "friday",
+                6: "saturday",
+              }[i] || "";
 
-          for (let i = 0; i < item.days.length; i++) {
-            const day = item.days[i];
-
-            if (!map[day] && schedule.days.includes(day)) {
-              map[day] = true;
-
-              const dayWord =
-                {
-                  0: "sunday",
-                  1: "monday",
-                  2: "tuesday",
-                  3: "wednesday",
-                  4: "thursday",
-                  5: "friday",
-                  6: "saturday",
-                }[day] || "";
-
-              invalid.push(dayWord);
-            }
+            message = message.length
+              ? `${message}${i === size - 1 ? " and " : ", "}${dayWord}`
+              : dayWord;
           }
         }
 
-        return sameTime && !!invalid.length;
-      })();
+        return sameTime && !!message.length;
+      });
 
       if (hasConflict) {
         dialog.showErrorBox(
           "Schedule Conflict",
-          `Sorry can't add schedule. A schedule is active at the specified time on ${joinArr(
-            invalid
-          )}.`
+          `Sorry can't add schedule. A schedule is active at the specified time on ${message}.`
         );
         return;
       }
