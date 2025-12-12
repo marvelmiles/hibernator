@@ -25,7 +25,7 @@ let mainWindow;
 
 app.whenReady().then(() => {
   const display = screen.getPrimaryDisplay();
-  const { width, height } = display.workArea;
+  const { width } = display.workArea;
 
   const winWidth = 640;
   const winHeight = 560;
@@ -43,17 +43,24 @@ app.whenReady().then(() => {
     },
   });
 
-  mainWindow.loadFile("./renderer/index.html");
+  const list = store.get(CONSTANTS.STORE_HIB_KEY, []);
 
-  mainWindow.once("ready-to-show", () => {
-    const list = store.get(CONSTANTS.STORE_HIB_KEY, []);
+  scheduler.cancelJobs("hibernate");
 
-    scheduler.cancelJobs("hibernate");
+  const valid = [];
 
-    for (const s of list) {
-      if (isScheduleActive(s)) scheduler.scheduleJob("hibernate", s);
+  console.log("let see");
+
+  for (const s of list) {
+    if (isScheduleActive(s)) {
+      scheduler.scheduleJob("hibernate", s);
+      valid.push(s);
     }
-  });
+  }
+
+  store.set(CONSTANTS.STORE_HIB_KEY, valid);
+
+  mainWindow.loadFile("./renderer/index.html");
 });
 
 ipcMain.handle(CONSTANTS.GET_STORE, () => {
@@ -79,7 +86,9 @@ ipcMain.handle(CONSTANTS.MESSAGE_DIALOG, (e, message) => {
   dialog.showErrorBox("", message);
 });
 
-ipcMain.handle("close-notification", (filterFromList) => {
+ipcMain.handle("close-notification", (e, filterFromList) => {
+  console.log("closing notification", filterFromList);
+
   closeHibernateNotification();
   if (filterFromList) scheduler.removeActiveScheduleFromList(mainWindow);
 });
@@ -98,15 +107,6 @@ ipcMain.handle("snooze-hibernation", () => {
     const schedule = scheduler.activeSchedule;
 
     if (schedule) {
-      if (schedule.snoozeCount > CONSTANTS.MAX_SNOOZE_COUNT) {
-        dialog.showErrorBox("Max snooze limit reached. Will hibernate");
-
-        scheduler.removeActiveScheduleFromList(mainWindow);
-
-        handleHibernation();
-        return;
-      }
-
       const snoozeCount = schedule.snoozeCount + 1;
 
       const list = store

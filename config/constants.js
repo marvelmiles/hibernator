@@ -10,10 +10,12 @@ const CONSTANTS = {
     days: [1, 2, 3, 4, 5], // zero-based day index
     repeat: true,
     snoozeCount: 0,
+    completedTask: [],
   },
   MESSAGE_DIALOG: "message-dialog",
   HIB_LIST_CHANGE: "hib-list",
-  MAX_SNOOZE_COUNT: 4,
+  MAX_SNOOZE_COUNT: 3,
+  COUNTDOWN: 15,
 };
 
 module.exports = CONSTANTS;

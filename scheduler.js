@@ -7,11 +7,17 @@ const { v4: uniqId } = require("uuid");
 class Scheduler {
   constructor(store) {
     this.store = store;
-    this.hibJobs = [];
+    this.hibSchedules = [];
     this.activeSchedule = null;
   }
 
   add(actionName, schedule) {
+    schedule = {
+      ...CONSTANTS.DEFAULT_SCHEDULE_PROPS,
+      ...schedule,
+      id: uniqId(),
+    };
+
     if (actionName === "hibernate") {
       const list = this.store.get(CONSTANTS.STORE_HIB_KEY, []);
 
@@ -33,11 +39,7 @@ class Scheduler {
         return;
       }
 
-      list.push({
-        ...CONSTANTS.DEFAULT_SCHEDULE_PROPS,
-        ...schedule,
-        id: uniqId(),
-      });
+      list.push(schedule);
 
       this.store.set(CONSTANTS.STORE_HIB_KEY, list);
 
@@ -49,7 +51,20 @@ class Scheduler {
   scheduleJob(actionName, s) {
     if (actionName === "hibernate") {
       const jobs = this.schedule(s, async () => {
-        this.cancel(actionName, s.id);
+        this.cancel(actionName, s.id, !!this.activeSchedule || false);
+
+        if (!s.repeat) {
+          const list = this.store.get(CONSTANTS.STORE_HIB_KEY, []).map((sch) =>
+            sch.id === s.id
+              ? {
+                  ...sch,
+                  completedTask: sch.completedTask.push(new Date().getDay()),
+                }
+              : sch
+          );
+
+          this.store.set(CONSTANTS.STORE_HIB_KEY, list);
+        }
 
         if (!this.activeSchedule) {
           this.activeSchedule = s;
@@ -58,11 +73,11 @@ class Scheduler {
         }
       });
 
-      this.hibJobs = this.hibJobs.concat(jobs);
+      this.hibSchedules = this.hibSchedules.concat(jobs);
     }
   }
 
-  schedule({ hour, minute, days, repeat }, cb) {
+  schedule({ hour, minute, days, repeat, id }, cb) {
     const jobs = [];
 
     days.forEach((dayIndex) => {
@@ -73,7 +88,7 @@ class Scheduler {
         rule.minute = minute;
 
         const job = schedule.scheduleJob(rule, cb);
-        jobs.push(job);
+        jobs.push({ id, dayIndex, job });
       } else {
         const now = new Date();
         let runDate = new Date(now);
@@ -89,7 +104,7 @@ class Scheduler {
         }
 
         const job = schedule.scheduleJob(runDate, cb);
-        jobs.push(job);
+        jobs.push({ id, dayIndex, job });
       }
     });
 
@@ -98,13 +113,13 @@ class Scheduler {
 
   cancelJobs(actionName) {
     if (actionName === "hibernate") {
-      for (const job of this.hibJobs) {
+      for (const { job } of this.hibSchedules) {
         job.cancel();
       }
     }
   }
 
-  cancel(actionName, id, filterList) {
+  cancel(actionName, id, filterList = true) {
     if (actionName === "hibernate") {
       if (id === undefined) {
         this.cancelJobs(actionName);
@@ -118,9 +133,11 @@ class Scheduler {
           this.store.set(CONSTANTS.STORE_HIB_KEY, list);
         }
 
-        const job = this.hibJobs.find((s) => s.id === id);
+        const sch = this.hibSchedules.find(
+          (s) => s.id === id && new Date().getDay() === s.dayIndex
+        );
 
-        if (!job) {
+        if (!sch) {
           dialog.showErrorBox(
             "Cancel Failure",
             "Something went wrong failed to cancel schedule."
@@ -128,7 +145,7 @@ class Scheduler {
           return;
         }
 
-        job.cancel();
+        sch.job.cancel();
       }
     }
   }
@@ -141,7 +158,7 @@ class Scheduler {
     if (this.activeSchedule) {
       const list = this.store
         .get(CONSTANTS.STORE_HIB_KEY, [])
-        .filter((s) => s.id !== scheduler.activeSchedule.id);
+        .filter((s) => s.id !== this.activeSchedule.id);
 
       this.store.set(CONSTANTS.STORE_HIB_KEY, list);
       this.activeSchedule = null;

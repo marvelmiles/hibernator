@@ -13,6 +13,7 @@ function _runCommand(cmd, args = [], callback) {
 }
 
 const hibernate = (callback = () => {}) => {
+  return;
   const platform = os.platform();
   if (platform === "win32") {
     return _runCommand("shutdown", ["/h"], callback);

@@ -1,5 +1,6 @@
 const { BrowserWindow } = require("electron");
 const path = require("path");
+const CONSTANTS = require("./config/constants");
 
 let notificationWin = null;
 
@@ -26,7 +27,7 @@ function showHibernateNotification(schedule) {
 
   notificationWin.once("ready-to-show", () => {
     notificationWin.webContents.send("show-notification", {
-      seconds: 15,
+      seconds: CONSTANTS.COUNTDOWN,
       schedule,
     });
   });

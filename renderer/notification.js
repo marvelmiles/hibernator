@@ -1,5 +1,3 @@
-const CONSTANTS = require("../config/constants");
-
 (async () => {
   const api = window.notificationApi;
 
@@ -15,6 +13,8 @@ const CONSTANTS = require("../config/constants");
   const proceedBtn = document.getElementById("proceed");
 
   window.notificationApi.onShowNotification(({ seconds, schedule }) => {
+    console.log(seconds, schedule);
+
     let currentSeconds = seconds;
 
     const id = setInterval(() => {
@@ -52,7 +52,7 @@ const CONSTANTS = require("../config/constants");
     if (
       (less || mode === "medium_strict") &&
       schedule &&
-      schedule.snoozeCount < CONSTANTS.MAX_SNOOZE_COUNT
+      schedule.snoozeCount < 3
     )
       snoozeBtn.style.display = "block";
 
