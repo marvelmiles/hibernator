@@ -1,11 +1,4 @@
-const {
-  app,
-  BrowserWindow,
-  ipcMain,
-  screen,
-  dialog,
-  Notification,
-} = require("electron");
+const { app, BrowserWindow, ipcMain, screen, dialog } = require("electron");
 const path = require("path");
 const AppStore = require("./config/store");
 const CONSTANTS = require("./config/constants");
@@ -48,8 +41,6 @@ app.whenReady().then(() => {
   scheduler.cancelJobs("hibernate");
 
   const valid = [];
-
-  console.log("let see");
 
   for (const s of list) {
     if (isScheduleActive(s)) {
