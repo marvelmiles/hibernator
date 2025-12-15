@@ -4,15 +4,10 @@
   "description": "Cross-platform background app that auto-hibernates devices at scheduled times",
   "main": "main.js",
   "scripts": {
-    "start": "nodemon --ext js,css,html --exec electron .",
+    "start": "electron .",
     "pack": "electron-builder --dir",
-    "dist": "electron-builder",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dist": "electron-builder"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
   "devDependencies": {
     "electron": "^39.2.6",
     "electron-builder": "^26.0.12",
@@ -26,10 +21,16 @@
   },
   "build": {
     "appId": "com.example.hibernator",
-    "productName": "Hibernate Scheduler",
+    "productName": "Hibernator",
+    "win": {
+      "target": "nsis",
+      "forceCodeSigning": false,
+      "verifyUpdateCodeSignature": false
+    },
     "nsis": {
       "oneClick": false,
-      "perMachine": false
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true
     }
   }
 }

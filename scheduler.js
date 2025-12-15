@@ -86,9 +86,11 @@ class Scheduler {
   scheduleJob(actionName, s) {
     if (actionName === "hibernate") {
       const jobs = this.schedule(s, async () => {
-        this.cancelJob(actionName, s.id);
+        console.log("schedule reached.", s.hour, s.minute);
 
         if (!s.repeat) {
+          this.cancelJob(actionName, s.id);
+
           const list = this.store
             .get(CONSTANTS.STORE_HIB_KEY, [])
             .map((sch) => {
@@ -117,6 +119,7 @@ class Scheduler {
       });
 
       this.hibSchedules = this.hibSchedules.concat(jobs);
+      console.log("done scheduling...");
     }
   }
 

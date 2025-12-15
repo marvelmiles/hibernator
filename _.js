@@ -18,9 +18,6 @@ const {
 } = require("./notificationWindow");
 const hibernate = require("./hibernate");
 const { isScheduleActive } = require("./utils/validators");
-const { Notification } = require("electron");
-
-app.setAppUserModelId("com.example.hibernator");
 
 const store = new AppStore();
 const scheduler = new Scheduler(store);
@@ -107,7 +104,7 @@ function createTray() {
 function bootstrapScheduler() {
   const list = store.get(CONSTANTS.STORE_HIB_KEY, []);
 
-  scheduler.cancelJobs("hibernate");
+  //   scheduler.cancelJobs("hibernate");
 
   const valid = [];
 
@@ -126,25 +123,12 @@ function bootstrapScheduler() {
  * App Ready
  * -----------------------------
  */
-
 app.whenReady().then(() => {
   // Auto-run on system startup
   app.setLoginItemSettings({
     openAtLogin: true,
     openAsHidden: true,
   });
-
-  const notification = new Notification({
-    title: "Hibernate Scheduled",
-    body: "System will hibernate soon",
-    actions: [
-      { type: "button", text: "Snooze" },
-      { type: "button", text: "Hibernate now" },
-    ],
-    closeButtonText: "Dismiss",
-  });
-
-  notification.show();
 
   createMainWindow();
   createTray();
