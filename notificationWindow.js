@@ -4,8 +4,14 @@ const CONSTANTS = require("./config/constants");
 
 let notificationWin = null;
 
-const showHibernateNotification = (schedule) => {
+let activeStoreKey = "";
+
+const showHibernateNotification = (schedule, storeKey) => {
   if (notificationWin) return;
+
+  activeStoreKey = storeKey;
+
+  console.log(activeStoreKey, "ss");
 
   notificationWin = new BrowserWindow({
     width: 320,
@@ -33,11 +39,23 @@ const showHibernateNotification = (schedule) => {
   });
 };
 
-const closeHibernateNotification = () => {
+const closeHibernateNotification = (resetKey) => {
+  let key = activeStoreKey;
+
+  if (resetKey) activeStoreKey = "";
+
   if (notificationWin) {
     notificationWin.close();
     notificationWin = null;
   }
+
+  return key;
 };
 
-module.exports = { showHibernateNotification, closeHibernateNotification };
+const getActiveStoreKey = () => activeStoreKey;
+
+module.exports = {
+  showHibernateNotification,
+  closeHibernateNotification,
+  getActiveStoreKey,
+};

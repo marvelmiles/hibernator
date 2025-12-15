@@ -10,13 +10,15 @@ const path = require("path");
 
 const AppStore = require("./config/store");
 const CONSTANTS = require("./config/constants");
-const Scheduler = require("./scheduler");
+const HibernateScheduler = require("./schedulers/hibernate-scheduler");
 const {
   showHibernateNotification,
   closeHibernateNotification,
+  getActiveStoreKey,
 } = require("./notificationWindow");
 const hibernate = require("./hibernate");
 const { isScheduleActive } = require("./utils/validators");
+const BootScheduler = require("./schedulers/boot-scheduler");
 
 app.setAppUserModelId("com.example.hibernator");
 
@@ -31,7 +33,9 @@ let mainWindow;
 let tray;
 
 const store = new AppStore();
-const scheduler = new Scheduler(store);
+const hibernateScheduler = new HibernateScheduler(store);
+const bootScheduler = new BootScheduler(store);
+
 const isDev = !app.isPackaged;
 
 /**
@@ -92,21 +96,26 @@ const createTray = () => {
   });
 };
 
-const bootstrapScheduler = (storeKey) => {
-  const list = store.get(storeKey, []);
+const bootstrapHibernateScheduler = () => {
+  const list = store.get(CONSTANTS.STORE_HIB_KEY, []);
 
-  scheduler.cancelJobs(storeKey);
+  hibernateScheduler.cancelJobs();
 
   const valid = [];
 
   for (const s of list) {
     if (isScheduleActive(s)) {
-      scheduler.scheduleJob(s, storeKey);
+      hibernateScheduler.scheduleJob(s);
       valid.push(s);
     }
   }
 
-  store.set(storeKey, valid);
+  store.set(CONSTANTS.STORE_HIB_KEY, valid);
+};
+
+const getScheduler = (storeKey) => {
+  if (storeKey === CONSTANTS.STORE_BOOT_KEY) return bootScheduler;
+  else return hibernateScheduler;
 };
 
 app.whenReady().then(() => {
@@ -117,8 +126,8 @@ app.whenReady().then(() => {
 
   createMainWindow();
   createTray();
-  bootstrapScheduler(CONSTANTS.STORE_HIB_KEY);
-  bootstrapScheduler(CONSTANTS.STORE_BOOT_KEY);
+  bootScheduler.shouldHibernate();
+  bootstrapHibernateScheduler();
 
   const openedAtLogin = app.getLoginItemSettings().wasOpenedAtLogin;
 
@@ -154,49 +163,83 @@ ipcMain.handle(CONSTANTS.MESSAGE_DIALOG, (_, message) => {
 // HIBERNATE HANDLERS
 
 ipcMain.handle(CONSTANTS.ADD_HIB_SCHEDULE, (_, s) => {
-  return scheduler.add(CONSTANTS.STORE_HIB_KEY, s);
+  return hibernateScheduler.add(s);
 });
 
 ipcMain.handle(CONSTANTS.CANCEL_HIB_SCHEDULE, (_, id) => {
-  return scheduler.cancelSchedule(id, CONSTANTS.STORE_HIB_KEY);
+  return hibernateScheduler.cancelSchedule(id);
 });
 
 // BOOT HANDLERS
 
 ipcMain.handle(CONSTANTS.ADD_BOOT_SCHEDULE, (_, s) => {
-  return scheduler.add(s, CONSTANTS.STORE_BOOT_KEY);
+  return bootScheduler.add(s);
 });
 
 ipcMain.handle(CONSTANTS.CANCEL_BOOT_SCHEDULE, (_, id) => {
-  return scheduler.cancelSchedule(id, CONSTANTS.STORE_BOOT_KEY);
+  return bootScheduler.cancelSchedule(CONSTANTS.STORE_BOOT_KEY, id);
 });
 
 // NOTIFICATION HANDLERS
 
 ipcMain.handle("close-notification", (_, filterFromList) => {
-  closeHibernateNotification();
-  if (filterFromList) scheduler.removeActiveScheduleFromList(mainWindow);
+  const storeKey = closeHibernateNotification(filterFromList);
+
+  if (!storeKey) {
+    dialog.showErrorBox(
+      "Application Error",
+      "Encountered error while closing notification window."
+    );
+
+    return;
+  }
+
+  if (filterFromList) {
+    const scheduler = getScheduler(storeKey);
+
+    scheduler.removeActiveScheduleFromList(storeKey, mainWindow);
+  }
 });
 
-ipcMain.handle("hibernate", () => {
+const handleHibernation = () => {
+  closeHibernateNotification(true);
   hibernate();
+};
+
+ipcMain.handle("hibernate", () => {
+  handleHibernation();
 });
 
 ipcMain.handle("snooze-hibernation", () => {
+  const storeKey = getActiveStoreKey();
+
+  if (!storeKey) {
+    dialog.showErrorBox(
+      "Application Error",
+      "Encountered error while snoozing."
+    );
+
+    return;
+  }
+
+  const scheduler = getScheduler(storeKey);
+
+  // set active schedule for boot
+
   setTimeout(() => {
     const schedule = scheduler.activeSchedule;
-    if (!schedule) return;
+    if (!schedule) return handleHibernation();
 
     const snoozeCount = schedule.snoozeCount + 1;
 
     const list = store
-      .get(CONSTANTS.STORE_HIB_KEY, [])
+      .get(storeKey, [])
       .map((s) => (s.id === schedule.id ? { ...s, snoozeCount } : s));
 
-    store.set(CONSTANTS.STORE_HIB_KEY, list);
+    store.set(storeKey, list);
     scheduler.setActiveSchedule({ ...schedule, snoozeCount });
 
-    showHibernateNotification(scheduler.activeSchedule);
+    showHibernateNotification(scheduler.activeSchedule, storeKey);
   }, 10_000);
 });
 
