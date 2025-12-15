@@ -6,11 +6,13 @@ class AppStore extends Store {
     super({
       name: "hibernator-settings",
       defaults: {
-        [CONSTANTS.STORE_BOOT_KEY]: {
-          ...CONSTANTS.DEFAULT_SCHEDULE_PROPS,
-          minute: 30,
-          hour: 9,
-        },
+        [CONSTANTS.STORE_BOOT_KEY]: [
+          {
+            ...CONSTANTS.DEFAULT_SCHEDULE_PROPS,
+            minute: 30,
+            hour: 9,
+          },
+        ],
         [CONSTANTS.STORE_HIB_KEY]: [
           {
             ...CONSTANTS.DEFAULT_SCHEDULE_PROPS,

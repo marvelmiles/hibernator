@@ -6,11 +6,15 @@ contextBridge.exposeInMainWorld("electronApi", {
     addSchedule: (s) => ipcRenderer.invoke("add-hib-schedule", s),
     cancelSchedule: (id) => ipcRenderer.invoke("cancel-hib-schedule", id),
   },
-  toast(message) {
-    ipcRenderer.invoke("message-dialog", message);
+  boot: {
+    addSchedule: (s) => ipcRenderer.invoke("add-boot-schedule", s),
+    cancelSchedule: (id) => ipcRenderer.invoke("cancel-boot-schedule", id),
   },
-  onHibernateListChange(cb) {
-    ipcRenderer.on("hib-list", () => {
+  toast(message) {
+    return ipcRenderer.invoke("message-dialog", message);
+  },
+  onListChange(eventName, cb) {
+    ipcRenderer.on(eventName, () => {
       cb();
     });
   },

@@ -8,123 +8,135 @@ const { joinArr } = require("./utils/helper");
 class Scheduler {
   constructor(store) {
     this.store = store;
-    this.hibSchedules = [];
+    this.hibEntities = [];
+    this.bootEntities = [];
     this.activeSchedule = null;
   }
 
-  add(actionName, schedule) {
+  getEntities(storeKey) {
+    return storeKey === CONSTANTS.STORE_BOOT_KEY
+      ? this.bootEntities
+      : this.hibEntities;
+  }
+
+  setEntities(storeKey, entities) {
+    if (storeKey === CONSTANTS.STORE_BOOT_KEY)
+      this.bootEntities = this.bootEntities.concat(entities);
+    else this.hibEntities = this.hibEntities.concat(entities);
+  }
+
+  add(schedule, storeKey) {
+    const isBoot = storeKey === CONSTANTS.STORE_BOOT_KEY;
+
     schedule = {
       ...CONSTANTS.DEFAULT_SCHEDULE_PROPS,
       ...schedule,
+      storeKey,
       id: uniqId(),
     };
 
-    if (actionName === "hibernate") {
-      const list = this.store.get(CONSTANTS.STORE_HIB_KEY, []);
+    const list = this.store.get(storeKey, []);
 
-      const invalid = [];
+    const invalid = [];
 
-      const hasConflict = (() => {
-        let sameTime = false;
+    const hasConflict = (() => {
+      let sameTime = false;
 
-        const map = {};
+      const map = {};
 
-        for (const item of list) {
-          if (!sameTime)
-            sameTime =
-              item.hour === schedule.hour && item.minute === schedule.minute;
+      for (const item of list) {
+        if (!sameTime)
+          sameTime =
+            item.hour === schedule.hour && item.minute === schedule.minute;
 
-          for (let i = 0; i < item.days.length; i++) {
-            const day = item.days[i];
+        for (let i = 0; i < item.days.length; i++) {
+          const day = item.days[i];
 
-            if (!map[day] && schedule.days.includes(day)) {
-              map[day] = true;
+          if (!map[day] && schedule.days.includes(day)) {
+            map[day] = true;
 
-              const dayWord =
-                {
-                  0: "sunday",
-                  1: "monday",
-                  2: "tuesday",
-                  3: "wednesday",
-                  4: "thursday",
-                  5: "friday",
-                  6: "saturday",
-                }[day] || "";
+            const dayWord =
+              {
+                0: "sunday",
+                1: "monday",
+                2: "tuesday",
+                3: "wednesday",
+                4: "thursday",
+                5: "friday",
+                6: "saturday",
+              }[day] || "";
 
-              invalid.push(dayWord);
-            }
+            invalid.push(dayWord);
           }
         }
-
-        return sameTime && !!invalid.length;
-      })();
-
-      if (hasConflict) {
-        dialog.showErrorBox(
-          "Schedule Conflict",
-          `Sorry can't add schedule. A schedule is active at the specified time on ${joinArr(
-            invalid
-          )}.`
-        );
-        return;
       }
 
-      if (list.length > 7) {
-        dialog.showErrorBox("Schedule limit", "Max Schedule Reached.");
-        return;
-      }
+      if (isBoot) return !!invalid.length;
 
-      list.push(schedule);
+      return sameTime && !!invalid.length;
+    })();
 
-      this.store.set(CONSTANTS.STORE_HIB_KEY, list);
-
-      this.scheduleJob(actionName, schedule);
-    } else {
+    if (hasConflict) {
+      dialog.showErrorBox(
+        "Schedule Conflict",
+        `Sorry can't add schedule. A schedule is active${
+          isBoot ? "" : " at the specified time"
+        } on ${joinArr(invalid)}.`
+      );
+      return;
     }
+
+    if (list.length > 7) {
+      dialog.showErrorBox("Schedule limit", "Max Schedule Reached.");
+      return;
+    }
+
+    list.push(schedule);
+
+    this.store.set(storeKey, list);
+
+    this.scheduleJob(schedule, storeKey);
   }
 
-  scheduleJob(actionName, s) {
-    if (actionName === "hibernate") {
-      const jobs = this.schedule(s, async () => {
-        console.log("schedule reached.", s.hour, s.minute);
+  scheduleJob(s, storeKey) {
+    const entities = this.schedule(s, async () => {
+      console.log("schedule reached.", s.hour, s.minute);
 
-        if (!s.repeat) {
-          this.cancelJob(actionName, s.id);
+      if (!s.repeat) {
+        this.cancelJob(storeKey, s.id);
 
-          const list = this.store
-            .get(CONSTANTS.STORE_HIB_KEY, [])
-            .map((sch) => {
-              if (sch.id === s.id) {
-                const updatedSchedule = {
-                  ...sch,
-                  completedTask: sch.completedTask.push(new Date().getDay()),
-                };
+        const list = this.store.get(storeKey, []).map((sch) => {
+          if (sch.id === s.id) {
+            const updatedSchedule = {
+              ...sch,
+              completedTask: sch.completedTask.push(new Date().getDay()),
+            };
 
-                if (this.activeSchedule?.id === updatedSchedule?.id)
-                  this.activeSchedule = updatedSchedule;
+            if (this.activeSchedule?.id === updatedSchedule?.id)
+              this.activeSchedule = updatedSchedule;
 
-                return updatedSchedule;
-              }
-              return sch;
-            });
+            return updatedSchedule;
+          }
+          return sch;
+        });
 
-          this.store.set(CONSTANTS.STORE_HIB_KEY, list);
-        }
+        this.store.set(storeKey, list);
+      }
 
-        if (!this.activeSchedule) {
-          this.activeSchedule = s;
+      if (!this.activeSchedule) {
+        this.activeSchedule = s;
 
-          showHibernateNotification(this.activeSchedule);
-        }
-      });
+        showHibernateNotification(this.activeSchedule);
+      }
+    });
 
-      this.hibSchedules = this.hibSchedules.concat(jobs);
-      console.log("done scheduling...");
-    }
+    this.setEntities(storeKey, entities);
+
+    console.log("done scheduling...");
   }
 
   schedule({ hour, minute, days, repeat, id }, cb) {
-    const jobs = [];
+    const entities = [];
 
     days.forEach((dayIndex) => {
       if (repeat) {
@@ -134,7 +146,7 @@ class Scheduler {
         rule.minute = minute;
 
         const job = schedule.scheduleJob(rule, cb);
-        jobs.push({ id, dayIndex, job });
+        entities.push({ id, dayIndex, job });
       } else {
         const now = new Date();
         let runDate = new Date(now);
@@ -150,77 +162,71 @@ class Scheduler {
         }
 
         const job = schedule.scheduleJob(runDate, cb);
-        jobs.push({ id, dayIndex, job });
+        entities.push({ id, dayIndex, job });
       }
     });
 
-    return jobs;
+    return entities;
   }
 
-  cancelJobs(actionName) {
-    if (actionName === "hibernate") {
-      for (const { job } of this.hibSchedules) {
-        job.cancel();
-      }
+  cancelJobs(storeKey) {
+    for (const { job } of this.getEntities(storeKey)) {
+      job.cancel();
     }
   }
 
-  cancelJob(actionName, id) {
-    if (actionName === "hibernate") {
-      if (id === undefined) {
-        this.cancelJobs(actionName);
-        this.store.set(CONSTANTS.STORE_HIB_KEY, []);
-      } else {
-        const sch = this.hibSchedules.find(
-          (s) => s.id === id && new Date().getDay() === s.dayIndex
+  cancelJob(storeKey, scheduleId) {
+    if (scheduleId === undefined) {
+      this.cancelJobs(storeKey);
+      this.store.set(storeKey, []);
+    } else {
+      const entity = this.getEntities(storeKey).find(
+        (s) => s.id === scheduleId && new Date().getDay() === s.dayIndex
+      );
+
+      if (!entity) {
+        dialog.showErrorBox(
+          "Cancel Failure",
+          "Something went wrong failed to cancel schedule."
         );
-
-        if (!sch) {
-          dialog.showErrorBox(
-            "Cancel Failure",
-            "Something went wrong failed to cancel schedule."
-          );
-          return;
-        }
-
-        sch.job.cancel();
+        return;
       }
+
+      entity.job.cancel();
     }
   }
 
-  cancelSchedule(sid, actionName = "hibernate") {
-    const clearAll = sid === undefined;
+  cancelSchedule(scheduleId, storeKey) {
+    const clearAll = scheduleId === undefined;
 
-    if (this.activeSchedule?.id === sid) this.activeSchedule = null;
+    if (this.activeSchedule?.id === scheduleId) this.activeSchedule = null;
 
-    if (actionName === "hibernate") {
-      const others = [];
+    const others = [];
 
-      for (let i = 0; i < this.hibSchedules.length; i++) {
-        const entity = this.hibSchedules[i];
+    const entities = this.getEntities(storeKey);
 
-        if (clearAll) entity.job.cancel();
-        else {
-          if (entity.id === sid) {
-            entity.job.cancel();
+    for (let i = 0; i < entities.length; i++) {
+      const entity = entities[i];
 
-            continue;
-          }
+      if (clearAll) entity.job.cancel();
+      else {
+        if (entity.id === scheduleId) {
+          entity.job.cancel();
 
-          others.push(entity);
+          continue;
         }
+
+        others.push(entity);
       }
-
-      this.hibSchedules = others;
-
-      const list = clearAll
-        ? []
-        : this.store
-            .get(CONSTANTS.STORE_HIB_KEY, [])
-            .filter((s) => s.id !== sid);
-
-      this.store.set(CONSTANTS.STORE_HIB_KEY, list);
     }
+
+    this.setEntities(storeKey, others);
+
+    const list = clearAll
+      ? []
+      : this.store.get(storeKey, []).filter((s) => s.id !== scheduleId);
+
+    this.store.set(storeKey, list);
   }
 
   setActiveSchedule(schedule) {
@@ -229,20 +235,27 @@ class Scheduler {
 
   removeActiveScheduleFromList(window) {
     if (this.activeSchedule) {
+      const storeKey = this.activeSchedule.storeKey;
+
       if (
         this.activeSchedule.days.length ===
         this.activeSchedule.completedTask.length
       ) {
         const list = this.store
-          .get(CONSTANTS.STORE_HIB_KEY, [])
+          .get(storeKey, [])
           .filter((s) => s.id !== this.activeSchedule.id);
 
-        this.store.set(CONSTANTS.STORE_HIB_KEY, list);
+        this.store.set(storeKey, list);
       }
 
       this.activeSchedule = null;
 
-      if (window) window.webContents.send(CONSTANTS.HIB_LIST_CHANGE);
+      if (window)
+        window.webContents.send(
+          storeKey === CONSTANTS.STORE_BOOT_KEY
+            ? CONSTANTS.BOOT_LIST_CHANGE
+            : CONSTANTS.HIB_LIST_CHANGE
+        );
     }
   }
 }

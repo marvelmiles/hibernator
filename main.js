@@ -92,21 +92,21 @@ const createTray = () => {
   });
 };
 
-const bootstrapScheduler = () => {
-  const list = store.get(CONSTANTS.STORE_HIB_KEY, []);
+const bootstrapScheduler = (storeKey) => {
+  const list = store.get(storeKey, []);
 
-  scheduler.cancelJobs("hibernate");
+  scheduler.cancelJobs(storeKey);
 
   const valid = [];
 
   for (const s of list) {
     if (isScheduleActive(s)) {
-      scheduler.scheduleJob("hibernate", s);
+      scheduler.scheduleJob(s, storeKey);
       valid.push(s);
     }
   }
 
-  store.set(CONSTANTS.STORE_HIB_KEY, valid);
+  store.set(storeKey, valid);
 };
 
 app.whenReady().then(() => {
@@ -117,7 +117,8 @@ app.whenReady().then(() => {
 
   createMainWindow();
   createTray();
-  bootstrapScheduler();
+  bootstrapScheduler(CONSTANTS.STORE_HIB_KEY);
+  bootstrapScheduler(CONSTANTS.STORE_BOOT_KEY);
 
   const openedAtLogin = app.getLoginItemSettings().wasOpenedAtLogin;
 
@@ -136,24 +137,41 @@ app.whenReady().then(() => {
  * IPC HANDLERS
  * -----------------------------
  */
+
+// CONTEXT HANDLERS
+
 ipcMain.handle(CONSTANTS.GET_STORE, () => {
   return {
-    allowedBootSchedule: store.get("allowedBootSchedule"),
-    hibernateSchedules: store.get("hibernateSchedules"),
+    bootSchedules: store.get("bootSchedules", []),
+    hibernateSchedules: store.get("hibernateSchedules", []),
   };
 });
 
+ipcMain.handle(CONSTANTS.MESSAGE_DIALOG, (_, message) => {
+  return dialog.showErrorBox("Warning", message);
+});
+
+// HIBERNATE HANDLERS
+
 ipcMain.handle(CONSTANTS.ADD_HIB_SCHEDULE, (_, s) => {
-  return scheduler.add("hibernate", s);
+  return scheduler.add(CONSTANTS.STORE_HIB_KEY, s);
 });
 
 ipcMain.handle(CONSTANTS.CANCEL_HIB_SCHEDULE, (_, id) => {
-  return scheduler.cancelSchedule(id, "hibernate");
+  return scheduler.cancelSchedule(id, CONSTANTS.STORE_HIB_KEY);
 });
 
-ipcMain.handle(CONSTANTS.MESSAGE_DIALOG, (_, message) => {
-  dialog.showErrorBox("Warning", message);
+// BOOT HANDLERS
+
+ipcMain.handle(CONSTANTS.ADD_BOOT_SCHEDULE, (_, s) => {
+  return scheduler.add(s, CONSTANTS.STORE_BOOT_KEY);
 });
+
+ipcMain.handle(CONSTANTS.CANCEL_BOOT_SCHEDULE, (_, id) => {
+  return scheduler.cancelSchedule(id, CONSTANTS.STORE_BOOT_KEY);
+});
+
+// NOTIFICATION HANDLERS
 
 ipcMain.handle("close-notification", (_, filterFromList) => {
   closeHibernateNotification();

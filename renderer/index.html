@@ -10,137 +10,272 @@
       <h1>Hibernator</h1>
 
       <hr />
+
       <section>
-        <div>
-          <h2>Set Boot start Time</h2>
-          <label
-            >Hour:
-            <input id="start_hr" type="number" min="1" max="23" value="23"
-          /></label>
-          <label
-            >Minute:
-            <input id="start_min" type="number" min="1" max="59" value="1"
-          /></label>
-          <label
-            >Strict:
-            <select id="start_level" defaultValue="very_strict">
-              <option value="less_strict">Less strict</option>
-              <option value="medium_strict">Medium strict</option>
-              <option value="very_strict" selected>Very strict</option>
-            </select>
-          </label>
-          <button id="start_btn">Set</button>
-        </div>
+        <h2>Boot schedules</h2>
+        <div id="boot_content">
+          <div>
+            <button id="boot_stop_all">Stop All</button>
+            <label
+              >Hour:
+              <input id="boot_hr" type="number" min="0" max="23" value="23"
+            /></label>
+            <label
+              >Minute:
+              <input id="boot_min" type="number" min="0" max="59" value="1"
+            /></label>
 
-        <hr />
+            <div>
+              <label class="section-title">Schedule Days</label>
+              <div>
+                <label>
+                  <input
+                    type="radio"
+                    name="boot_days_preset"
+                    value="everyday"
+                  />
 
-        <div>
-          <h2>Active Boot Time</h2>
-          <div id="start_list"></div>
+                  Everyday
+                </label>
+
+                <label>
+                  <input
+                    type="radio"
+                    name="boot_days_preset"
+                    value="weekdays"
+                    checked
+                  />
+                  Weekdays
+                </label>
+
+                <label>
+                  <input
+                    type="radio"
+                    name="boot_days_preset"
+                    value="weekends"
+                  />
+                  Weekends
+                </label>
+
+                <label>
+                  <input
+                    type="radio"
+                    id="boot_days_preset_custom"
+                    name="boot_days_preset"
+                    value="custom"
+                  />
+                  Custom
+                </label>
+
+                <div id="boot_custom_preset_days" style="display: none">
+                  <label>Select Days:</label>
+                  <label
+                    ><input
+                      type="checkbox"
+                      value="0"
+                      name="boot_custom_preset_day"
+                    />
+                    Sunday</label
+                  >
+                  <label
+                    ><input
+                      type="checkbox"
+                      value="1"
+                      name="boot_custom_preset_day"
+                    />
+                    Monday</label
+                  >
+                  <label
+                    ><input
+                      type="checkbox"
+                      value="2"
+                      name="boot_custom_preset_day"
+                    />
+                    Tuesday</label
+                  >
+                  <label
+                    ><input
+                      type="checkbox"
+                      value="3"
+                      name="boot_custom_preset_day"
+                    />
+                    Wednesday</label
+                  >
+                  <label
+                    ><input
+                      type="checkbox"
+                      value="4"
+                      name="boot_custom_preset_day"
+                    />
+                    Thursday</label
+                  >
+                  <label
+                    ><input
+                      type="checkbox"
+                      value="5"
+                      name="boot_custom_preset_day"
+                    />
+                    Friday</label
+                  >
+                  <label
+                    ><input
+                      type="checkbox"
+                      value="6"
+                      name="boot_custom_preset_day"
+                    />
+                    Saturday</label
+                  >
+                </div>
+              </div>
+            </div>
+
+            <label>
+              <input type="checkbox" id="boot_repeat_freq" checked />
+              Repeat Every week:
+            </label>
+
+            <label
+              >Mode:
+              <select id="boot_schedule_mode">
+                <option value="less_strict">Less strict</option>
+                <option value="medium_strict">Medium strict</option>
+                <option value="very_strict" selected>Very strict</option>
+              </select>
+            </label>
+            <button id="boot_schedule_btn">Add</button>
+          </div>
+          <hr />
+          <div id="boot_schedule_list"></div>
         </div>
       </section>
 
-      <hr />
-
       <section>
-        <div>
-          <h2>Add hibernate schedule</h2>
-          <button id="hib_delete_all">Stop All</button>
-          <label
-            >Hour: <input id="hib_hr" type="number" min="1" max="23" value="23"
-          /></label>
-          <label
-            >Minute:
-            <input id="hib_min" type="number" min="1" max="59" value="1"
-          /></label>
-
+        <h2>Hibernate schedules</h2>
+        <div id="hib_content">
           <div>
-            <label class="section-title">Schedule Days</label>
+            <button id="hib_stop_all">Stop All</button>
+            <label
+              >Hour:
+              <input id="hib_hr" type="number" min="0" max="23" value="23"
+            /></label>
+            <label
+              >Minute:
+              <input id="hib_min" type="number" min="0" max="59" value="1"
+            /></label>
+
             <div>
-              <label>
-                <input type="radio" name="hib_schedule_type" value="everyday" />
+              <label class="section-title">Schedule Days</label>
+              <div>
+                <label>
+                  <input type="radio" name="hib_days_preset" value="everyday" />
 
-                Everyday
-              </label>
+                  Everyday
+                </label>
 
-              <label>
-                <input
-                  type="radio"
-                  name="hib_schedule_type"
-                  value="weekdays"
-                  checked
-                />
-                Weekdays
-              </label>
+                <label>
+                  <input
+                    type="radio"
+                    name="hib_days_preset"
+                    value="weekdays"
+                    checked
+                  />
+                  Weekdays
+                </label>
 
-              <label>
-                <input type="radio" name="hib_schedule_type" value="weekends" />
-                Weekends
-              </label>
+                <label>
+                  <input type="radio" name="hib_days_preset" value="weekends" />
+                  Weekends
+                </label>
 
-              <label>
-                <input
-                  type="radio"
-                  id="hib_schedule_type_custom"
-                  name="hib_schedule_type"
-                  value="custom"
-                />
-                Custom
-              </label>
+                <label>
+                  <input
+                    type="radio"
+                    id="hib_days_preset_custom"
+                    name="hib_days_preset"
+                    value="custom"
+                  />
+                  Custom
+                </label>
 
-              <div id="hib_schedule_days" style="display: none">
-                <label>Select Days:</label>
-                <label
-                  ><input type="checkbox" value="0" name="hib_schedule_day" />
-                  Sunday</label
-                >
-                <label
-                  ><input type="checkbox" value="1" name="hib_schedule_day" />
-                  Monday</label
-                >
-                <label
-                  ><input type="checkbox" value="2" name="hib_schedule_day" />
-                  Tuesday</label
-                >
-                <label
-                  ><input type="checkbox" value="3" name="hib_schedule_day" />
-                  Wednesday</label
-                >
-                <label
-                  ><input type="checkbox" value="4" name="hib_schedule_day" />
-                  Thursday</label
-                >
-                <label
-                  ><input type="checkbox" value="5" name="hib_schedule_day" />
-                  Friday</label
-                >
-                <label
-                  ><input type="checkbox" value="6" name="hib_schedule_day" />
-                  Saturday</label
-                >
+                <div id="hib_custom_preset_days" style="display: none">
+                  <label>Select Days:</label>
+                  <label
+                    ><input
+                      type="checkbox"
+                      value="0"
+                      name="hib_custom_preset_day"
+                    />
+                    Sunday</label
+                  >
+                  <label
+                    ><input
+                      type="checkbox"
+                      value="1"
+                      name="hib_custom_preset_day"
+                    />
+                    Monday</label
+                  >
+                  <label
+                    ><input
+                      type="checkbox"
+                      value="2"
+                      name="hib_custom_preset_day"
+                    />
+                    Tuesday</label
+                  >
+                  <label
+                    ><input
+                      type="checkbox"
+                      value="3"
+                      name="hib_custom_preset_day"
+                    />
+                    Wednesday</label
+                  >
+                  <label
+                    ><input
+                      type="checkbox"
+                      value="4"
+                      name="hib_custom_preset_day"
+                    />
+                    Thursday</label
+                  >
+                  <label
+                    ><input
+                      type="checkbox"
+                      value="5"
+                      name="hib_custom_preset_day"
+                    />
+                    Friday</label
+                  >
+                  <label
+                    ><input
+                      type="checkbox"
+                      value="6"
+                      name="hib_custom_preset_day"
+                    />
+                    Saturday</label
+                  >
+                </div>
               </div>
             </div>
+
+            <label>
+              <input type="checkbox" id="hib_repeat_freq" checked />
+              Repeat Every week:
+            </label>
+
+            <label
+              >Mode:
+              <select id="hib_schedule_mode">
+                <option value="less_strict">Less strict</option>
+                <option value="medium_strict">Medium strict</option>
+                <option value="very_strict" selected>Very strict</option>
+              </select>
+            </label>
+            <button id="hib_schedule_btn">Add</button>
           </div>
-
-          <label>
-            <input type="checkbox" id="hib_repeat" checked />
-            Repeat Every week:
-          </label>
-
-          <label
-            >Mode:
-            <select id="hib_level">
-              <option value="less_strict">Less strict</option>
-              <option value="medium_strict">Medium strict</option>
-              <option value="very_strict" selected>Very strict</option>
-            </select>
-          </label>
-          <button id="hib_btn">Add</button>
-        </div>
-        <hr />
-        <div>
-          <h2>Schedules</h2>
-          <div id="hib_list"></div>
+          <hr />
+          <div id="hib_schedule_list"></div>
         </div>
       </section>
     </div>
