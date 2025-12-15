@@ -4,7 +4,7 @@ const CONSTANTS = require("./config/constants");
 
 let notificationWin = null;
 
-function showHibernateNotification(schedule) {
+const showHibernateNotification = (schedule) => {
   if (notificationWin) return;
 
   notificationWin = new BrowserWindow({
@@ -31,7 +31,7 @@ function showHibernateNotification(schedule) {
       schedule,
     });
   });
-}
+};
 
 const closeHibernateNotification = () => {
   if (notificationWin) {

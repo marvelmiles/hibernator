@@ -1,7 +1,7 @@
 const { spawn } = require("child_process");
 const os = require("os");
 
-function _runCommand(cmd, args = [], callback) {
+const _runCommand = (cmd, args = [], callback) => {
   try {
     const child = spawn(cmd, args, { detached: true, stdio: "ignore" });
     child.on("error", (err) => callback(err));
@@ -10,7 +10,7 @@ function _runCommand(cmd, args = [], callback) {
   } catch (e) {
     callback(e);
   }
-}
+};
 
 const hibernate = (callback = () => {}) => {
   return;
@@ -20,7 +20,6 @@ const hibernate = (callback = () => {}) => {
   } else if (platform === "linux") {
     return _runCommand("systemctl", ["hibernate"], callback);
   } else if (platform === "darwin") {
-    // macOS: use sleepnow (hibernate not common)
     return _runCommand("pmset", ["sleepnow"], callback);
   } else {
     return callback(new Error("Unsupported platform"));

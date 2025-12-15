@@ -18,24 +18,40 @@ const {
 } = require("./notificationWindow");
 const hibernate = require("./hibernate");
 const { isScheduleActive } = require("./utils/validators");
-const { Notification } = require("electron");
 
 app.setAppUserModelId("com.example.hibernator");
 
-const store = new AppStore();
-const scheduler = new Scheduler(store);
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  app.quit();
+  return;
+}
 
 let mainWindow;
 let tray;
 
+const store = new AppStore();
+const scheduler = new Scheduler(store);
 const isDev = !app.isPackaged;
 
 /**
  * -----------------------------
- * Create Main Window (HIDDEN)
+ * SECOND INSTANCE HANDLER
  * -----------------------------
+ * Fired when user clicks app icon
+ * while tray app is already running
  */
-function createMainWindow() {
+
+app.on("second-instance", () => {
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.show();
+    mainWindow.focus();
+  }
+});
+
+const createMainWindow = () => {
   const display = screen.getPrimaryDisplay();
   const { width } = display.workArea;
 
@@ -43,11 +59,12 @@ function createMainWindow() {
   const winHeight = 560;
 
   mainWindow = new BrowserWindow({
-    show: false, // 👈 VERY IMPORTANT
+    show: false,
     width: winWidth,
     height: winHeight,
     x: width - winWidth,
     y: 0,
+    skipTaskbar: false,
     webPreferences: {
       preload: path.join(__dirname, "/preloads/main.js"),
       contextIsolation: true,
@@ -57,36 +74,23 @@ function createMainWindow() {
 
   mainWindow.loadFile(path.join(__dirname, "./renderer/index.html"));
 
-  // Prevent app from quitting when window is closed
   mainWindow.on("close", (e) => {
     if (!app.isQuiting) {
       e.preventDefault();
       mainWindow.hide();
     }
   });
-}
+};
 
-/**
- * -----------------------------
- * Tray Setup
- * -----------------------------
- */
-function createTray() {
-  tray = new Tray(path.join(__dirname, "assets/tray.png")); // ensure icon exists
+const createTray = () => {
+  tray = new Tray(path.join(__dirname, "assets/tray.png"));
 
   const menu = Menu.buildFromTemplate([
     {
-      label: "Open",
+      label: "Open Hibernator",
       click: () => {
         mainWindow.show();
         mainWindow.focus();
-      },
-    },
-    {
-      label: "Quit",
-      click: () => {
-        app.isQuiting = true;
-        app.quit();
       },
     },
   ]);
@@ -95,16 +99,12 @@ function createTray() {
   tray.setContextMenu(menu);
 
   tray.on("click", () => {
-    mainWindow.isVisible() ? mainWindow.hide() : mainWindow.show();
+    mainWindow.show();
+    mainWindow.focus();
   });
-}
+};
 
-/**
- * -----------------------------
- * Scheduler Bootstrap
- * -----------------------------
- */
-function bootstrapScheduler() {
+const bootstrapScheduler = () => {
   const list = store.get(CONSTANTS.STORE_HIB_KEY, []);
 
   scheduler.cancelJobs("hibernate");
@@ -119,38 +119,25 @@ function bootstrapScheduler() {
   }
 
   store.set(CONSTANTS.STORE_HIB_KEY, valid);
-}
-
-/**
- * -----------------------------
- * App Ready
- * -----------------------------
- */
+};
 
 app.whenReady().then(() => {
-  // Auto-run on system startup
   app.setLoginItemSettings({
     openAtLogin: true,
     openAsHidden: true,
   });
 
-  const notification = new Notification({
-    title: "Hibernate Scheduled",
-    body: "System will hibernate soon",
-    actions: [
-      { type: "button", text: "Snooze" },
-      { type: "button", text: "Hibernate now" },
-    ],
-    closeButtonText: "Dismiss",
-  });
-
-  notification.show();
-
   createMainWindow();
   createTray();
   bootstrapScheduler();
 
-  // Dev tools shortcut
+  const openedAtLogin = app.getLoginItemSettings().wasOpenedAtLogin;
+
+  if (!openedAtLogin) {
+    mainWindow.show();
+    mainWindow.focus();
+  }
+
   if (isDev) {
     mainWindow.webContents.openDevTools({ mode: "detach" });
   }
@@ -168,19 +155,19 @@ ipcMain.handle(CONSTANTS.GET_STORE, () => {
   };
 });
 
-ipcMain.handle(CONSTANTS.ADD_HIB_SCHEDULE, (event, s) => {
+ipcMain.handle(CONSTANTS.ADD_HIB_SCHEDULE, (_, s) => {
   return scheduler.add("hibernate", s);
 });
 
-ipcMain.handle(CONSTANTS.CANCEL_HIB_SCHEDULE, (event, id) => {
+ipcMain.handle(CONSTANTS.CANCEL_HIB_SCHEDULE, (_, id) => {
   return scheduler.cancelSchedule(id, "hibernate");
 });
 
-ipcMain.handle(CONSTANTS.MESSAGE_DIALOG, (e, message) => {
+ipcMain.handle(CONSTANTS.MESSAGE_DIALOG, (_, message) => {
   dialog.showErrorBox("Warning", message);
 });
 
-ipcMain.handle("close-notification", (e, filterFromList) => {
+ipcMain.handle("close-notification", (_, filterFromList) => {
   closeHibernateNotification();
   if (filterFromList) scheduler.removeActiveScheduleFromList(mainWindow);
 });
@@ -190,9 +177,7 @@ ipcMain.handle("hibernate", () => {
 });
 
 ipcMain.handle("snooze-hibernation", () => {
-  const id = setTimeout(() => {
-    clearTimeout(id);
-
+  setTimeout(() => {
     const schedule = scheduler.activeSchedule;
     if (!schedule) return;
 
@@ -211,15 +196,10 @@ ipcMain.handle("snooze-hibernation", () => {
 
 /**
  * -----------------------------
- * macOS behavior
+ * WINDOWS / MAC LIFECYCLE
  * -----------------------------
  */
 app.on("activate", () => {
-  if (BrowserWindow.getAllWindows().length === 0) {
-    createMainWindow();
-  }
-});
-
-app.on("window-all-closed", () => {
-  // DO NOTHING — keep background service alive
+  if (!mainWindow) createMainWindow();
+  mainWindow.show();
 });
