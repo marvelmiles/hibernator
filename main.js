@@ -5,7 +5,6 @@ const {
   screen,
   dialog,
   Tray,
-  Menu,
 } = require("electron");
 const path = require("path");
 
@@ -85,18 +84,7 @@ const createMainWindow = () => {
 const createTray = () => {
   tray = new Tray(path.join(__dirname, "assets/tray.png"));
 
-  const menu = Menu.buildFromTemplate([
-    {
-      label: "Open Hibernator",
-      click: () => {
-        mainWindow.show();
-        mainWindow.focus();
-      },
-    },
-  ]);
-
   tray.setToolTip("Hibernator");
-  tray.setContextMenu(menu);
 
   tray.on("click", () => {
     mainWindow.show();
