@@ -1,5 +1,4 @@
 const CONSTANTS = require("../config/constants");
-const { showHibernateNotification } = require("../notificationWindow");
 const Scheduler = require("./scheduler");
 
 class BootScheduler extends Scheduler {
@@ -12,22 +11,25 @@ class BootScheduler extends Scheduler {
 
     const todayIndex = new Date().getDay();
 
-    const schedule = list.find((s) => s.dayIndex === todayIndex);
+    list.forEach((s) => {
+      const dayIndex = s.days.find(
+        (dayIndex) =>
+          dayIndex === todayIndex && !s.completedTask.includes(todayIndex)
+      );
 
-    if (schedule) {
-      const allowedTime = new Date();
+      if (dayIndex !== null) {
+        const allowedTime = new Date();
 
-      allowedTime.setHours(schedule.hour, schedule.minute, 0, 0);
+        allowedTime.setHours(s.hour, s.minute, 0, 0);
 
-      const now = new Date().getTime();
+        const now = new Date().getTime();
 
-      if (now < allowedTime.getTime()) {
-        showHibernateNotification(schedule, CONSTANTS.STORE_BOOT_KEY);
+        if (now < allowedTime.getTime()) {
+          this.shouldShowNotification(s, CONSTANTS.STORE_BOOT_KEY);
+        }
       }
-    }
+    });
   }
-  removeActiveScheduleFromList() {}
-  setActiveSchedule() {}
 }
 
 module.exports = BootScheduler;

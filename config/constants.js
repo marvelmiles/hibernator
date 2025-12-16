@@ -18,7 +18,6 @@ const CONSTANTS = {
   HIB_LIST_CHANGE: "hib-list",
   BOOT_LIST_CHANGE: "boot-list",
   MAX_SNOOZE_COUNT: 3,
-  COUNTDOWN: 15,
 };
 
 module.exports = CONSTANTS;

@@ -12,10 +12,12 @@
   const cancelBtn = document.getElementById("cancel");
   const proceedBtn = document.getElementById("proceed");
 
-  window.notificationApi.onShowNotification(({ seconds, schedule }) => {
-    console.log(seconds, schedule);
-
-    let currentSeconds = seconds;
+  window.notificationApi.onShowNotification(({ schedule }) => {
+    let currentSeconds = {
+      very_strict: 5,
+      medium_strict: 10,
+      less_strict: 15,
+    }[schedule.mode];
 
     const id = setInterval(() => {
       currentSeconds = --currentSeconds;

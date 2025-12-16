@@ -1,11 +1,28 @@
 const CONSTANTS = require("../config/constants");
-const { showHibernateNotification } = require("../notificationWindow");
 const Scheduler = require("./scheduler");
 const schedule = require("node-schedule");
 
 class HibernateScheduler extends Scheduler {
   constructor(store) {
     super(store);
+    this.entities = [];
+  }
+
+  bootstrap() {
+    const list = this.store.get(CONSTANTS.STORE_HIB_KEY, []);
+
+    this.cancelJobs();
+
+    const valid = [];
+
+    for (const s of list) {
+      if (isScheduleActive(s)) {
+        this.scheduleJob(s);
+        valid.push(s);
+      }
+    }
+
+    this.store.set(CONSTANTS.STORE_HIB_KEY, valid);
   }
 
   add(schedule) {
@@ -15,34 +32,7 @@ class HibernateScheduler extends Scheduler {
 
   scheduleJob(s) {
     const entities = this.schedule(s, async () => {
-      console.log("schedule reached.", s.hour, s.minute, this.activeSchedule);
-
-      if (!s.repeat) {
-        this.cancelJob(s.id);
-
-        const list = this.store.get(CONSTANTS.STORE_HIB_KEY, []).map((sch) => {
-          if (sch.id === s.id) {
-            const updatedSchedule = {
-              ...sch,
-              completedTask: sch.completedTask.push(new Date().getDay()),
-            };
-
-            if (this.activeSchedule?.id === updatedSchedule?.id)
-              this.activeSchedule = updatedSchedule;
-
-            return updatedSchedule;
-          }
-          return sch;
-        });
-
-        this.store.set(CONSTANTS.STORE_HIB_KEY, list);
-      }
-
-      if (!this.activeSchedule) {
-        this.activeSchedule = s;
-
-        showHibernateNotification(this.activeSchedule, CONSTANTS.STORE_HIB_KEY);
-      }
+      this.shouldShowNotification(s, CONSTANTS.STORE_HIB_KEY);
     });
 
     this.entities = entities;
@@ -93,8 +83,10 @@ class HibernateScheduler extends Scheduler {
   }
 
   cancelJob(scheduleId) {
+    const todayIndex = new Date().getDay();
+
     const entity = this.entities.find(
-      (s) => s.id === scheduleId && new Date().getDay() === s.dayIndex
+      (s) => s.id === scheduleId && todayIndex === s.dayIndex
     );
 
     if (!entity) {
@@ -107,7 +99,9 @@ class HibernateScheduler extends Scheduler {
 
     entity.job.cancel();
 
-    this.entities = this.entities.filter((s) => s.id !== scheduleId);
+    this.entities = this.entities.filter(
+      (s) => s.id !== scheduleId && todayIndex === s.dayIndex
+    );
   }
 
   cancelSchedule(scheduleId) {

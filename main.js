@@ -96,23 +96,6 @@ const createTray = () => {
   });
 };
 
-const bootstrapHibernateScheduler = () => {
-  const list = store.get(CONSTANTS.STORE_HIB_KEY, []);
-
-  hibernateScheduler.cancelJobs();
-
-  const valid = [];
-
-  for (const s of list) {
-    if (isScheduleActive(s)) {
-      hibernateScheduler.scheduleJob(s);
-      valid.push(s);
-    }
-  }
-
-  store.set(CONSTANTS.STORE_HIB_KEY, valid);
-};
-
 const getScheduler = (storeKey) => {
   if (storeKey === CONSTANTS.STORE_BOOT_KEY) return bootScheduler;
   else return hibernateScheduler;
@@ -127,7 +110,7 @@ app.whenReady().then(() => {
   createMainWindow();
   createTray();
   bootScheduler.shouldHibernate();
-  bootstrapHibernateScheduler();
+  hibernateScheduler.bootstrap();
 
   const openedAtLogin = app.getLoginItemSettings().wasOpenedAtLogin;
 
@@ -197,7 +180,7 @@ ipcMain.handle("close-notification", (_, filterFromList) => {
   if (filterFromList) {
     const scheduler = getScheduler(storeKey);
 
-    scheduler.removeActiveScheduleFromList(storeKey, mainWindow);
+    scheduler.shouldRemoveActiveScheduleFromList(storeKey, mainWindow);
   }
 });
 
