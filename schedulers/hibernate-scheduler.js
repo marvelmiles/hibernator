@@ -1,3 +1,4 @@
+const { dialog, app } = require("electron");
 const CONSTANTS = require("../config/constants");
 const Scheduler = require("./scheduler");
 const schedule = require("node-schedule");
@@ -9,20 +10,8 @@ class HibernateScheduler extends Scheduler {
   }
 
   bootstrap() {
-    const list = this.store.get(CONSTANTS.STORE_HIB_KEY, []);
-
     this.cancelJobs();
-
-    const valid = [];
-
-    for (const s of list) {
-      if (isScheduleActive(s)) {
-        this.scheduleJob(s);
-        valid.push(s);
-      }
-    }
-
-    this.store.set(CONSTANTS.STORE_HIB_KEY, valid);
+    super.bootstrap(CONSTANTS.STORE_HIB_KEY);
   }
 
   add(schedule) {
@@ -36,8 +25,6 @@ class HibernateScheduler extends Scheduler {
     });
 
     this.entities = entities;
-
-    console.log("done scheduling job...");
   }
 
   schedule({ hour, minute, days, repeat, id }, cb) {
@@ -90,10 +77,12 @@ class HibernateScheduler extends Scheduler {
     );
 
     if (!entity) {
-      dialog.showErrorBox(
-        "Cancel Failure",
-        "Something went wrong failed to cancel schedule."
-      );
+      if (!app.isPackaged)
+        dialog.showErrorBox(
+          "Cancel Failure",
+          "Something went wrong failed to cancel schedule."
+        );
+
       return;
     }
 
@@ -105,11 +94,9 @@ class HibernateScheduler extends Scheduler {
   }
 
   cancelSchedule(scheduleId) {
-    const clearAll = scheduleId === undefined;
+    const clearAll = super.cancelSchedule(scheduleId, CONSTANTS.STORE_HIB_KEY);
 
-    if (this.activeSchedule?.id === scheduleId) this.activeSchedule = null;
-
-    const others = [];
+    const otherEntities = [];
 
     for (let i = 0; i < this.entities.length; i++) {
       const entity = this.entities[i];
@@ -122,19 +109,11 @@ class HibernateScheduler extends Scheduler {
           continue;
         }
 
-        others.push(entity);
+        otherEntities.push(entity);
       }
     }
 
-    this.entities = others;
-
-    const list = clearAll
-      ? []
-      : this.store
-          .get(CONSTANTS.STORE_HIB_KEY, [])
-          .filter((s) => s.id !== scheduleId);
-
-    this.store.set(CONSTANTS.STORE_HIB_KEY, list);
+    this.entities = otherEntities;
   }
 }
 

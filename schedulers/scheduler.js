@@ -3,11 +3,30 @@ const CONSTANTS = require("../config/constants");
 const { v4: uniqId } = require("uuid");
 const { joinArr } = require("../utils/helper");
 const { showHibernateNotification } = require("../notificationWindow");
+const { isScheduleActive } = require("../utils/validators");
 
 class Scheduler {
   constructor(store) {
     this.store = store;
     this.activeSchedule = null;
+  }
+
+  bootstrap(storeKey) {
+    const isHib = storeKey === CONSTANTS.STORE_HIB_KEY;
+
+    const list = this.store.get(storeKey, []);
+
+    const valid = [];
+
+    for (const s of list) {
+      if (isScheduleActive(s)) {
+        if (isHib) this.scheduleJob(s);
+
+        valid.push(s);
+      }
+    }
+
+    this.store.set(storeKey, valid);
   }
 
   add(schedule, storeKey) {
@@ -23,7 +42,26 @@ class Scheduler {
 
     const invalid = [];
 
+    const showConflictMessage = () =>
+      dialog.showErrorBox(
+        "Schedule Conflict",
+        `Sorry can't add schedule. A schedule is active${
+          isBoot ? "" : " at the specified time"
+        }${invalid.length ? ` on ${joinArr(invalid)}` : ""}.`
+      );
+
     const hasConflict = (() => {
+      if (!isBoot) {
+        const bootList = this.store.get(CONSTANTS.STORE_BOOT_KEY, []);
+
+        for (const { hour, minute } of bootList) {
+          if (schedule.hour === hour && schedule.minute === minute) {
+            showConflictMessage();
+            return;
+          }
+        }
+      }
+
       let sameTime = false;
 
       const map = {};
@@ -61,12 +99,7 @@ class Scheduler {
     })();
 
     if (hasConflict) {
-      dialog.showErrorBox(
-        "Schedule Conflict",
-        `Sorry can't add schedule. A schedule is active${
-          isBoot ? "" : " at the specified time"
-        } on ${joinArr(invalid)}.`
-      );
+      showConflictMessage();
       return;
     }
 
@@ -78,8 +111,6 @@ class Scheduler {
     list.push(schedule);
 
     this.store.set(storeKey, list);
-
-    console.log("done scheduling...");
 
     return schedule;
   }
@@ -93,7 +124,7 @@ class Scheduler {
       .get(storeKey, [])
       .filter((s) => s.id !== scheduleId);
 
-    this.set(storeKey, list);
+    this.store.set(storeKey, list);
   }
 
   markTodayTask(scheduleId, storeKey) {
@@ -101,7 +132,7 @@ class Scheduler {
       if (sch.id === scheduleId) {
         const updatedSchedule = {
           ...sch,
-          completedTask: sch.completedTask.push(new Date().getDay()),
+          completedTask: sch.completedTask.concat(new Date().getDay()),
         };
 
         if (this.activeSchedule?.id === updatedSchedule?.id)
@@ -117,24 +148,18 @@ class Scheduler {
   }
 
   shouldShowNotification(schedule, storeKey) {
-    console.log(
-      "schedule reached.",
-      schedule.hour,
-      schedule.minute,
-      this.activeSchedule
-    );
     const isHib = storeKey === CONSTANTS.STORE_HIB_KEY;
-
-    if (!schedule.repeat) {
-      this.markTodayTask(storeKey);
-
-      if (isHib) this.cancelJob(s.id);
-    }
 
     if (!this.activeSchedule) {
       this.activeSchedule = schedule;
 
       showHibernateNotification(this.activeSchedule, storeKey);
+    }
+
+    if (!schedule.repeat) {
+      this.markTodayTask(schedule.id, storeKey);
+
+      if (isHib) this.cancelJob(schedule.id);
     }
   }
 
@@ -147,6 +172,7 @@ class Scheduler {
         )
           this.removeFromStore(this.activeSchedule.id, storeKey);
       }
+
       this.activeSchedule = null;
     }
 
@@ -156,6 +182,22 @@ class Scheduler {
           ? CONSTANTS.BOOT_LIST_CHANGE
           : CONSTANTS.HIB_LIST_CHANGE
       );
+  }
+
+  cancelSchedule(scheduleId, storeKey) {
+    const clearAll = scheduleId === undefined;
+
+    if (this.activeSchedule?.id === scheduleId) {
+      this.activeSchedule = null;
+    }
+
+    const list = clearAll
+      ? []
+      : this.store.get(storeKey, []).filter((s) => s.id !== scheduleId);
+
+    this.store.set(storeKey, list);
+
+    return clearAll;
   }
 }
 

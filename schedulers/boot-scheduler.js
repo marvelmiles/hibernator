@@ -6,6 +6,11 @@ class BootScheduler extends Scheduler {
     super(store);
   }
 
+  bootstrap() {
+    super.bootstrap(CONSTANTS.STORE_BOOT_KEY);
+    this.shouldHibernate();
+  }
+
   shouldHibernate() {
     const list = this.store.get(CONSTANTS.STORE_BOOT_KEY, []);
 

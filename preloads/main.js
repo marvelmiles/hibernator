@@ -18,4 +18,7 @@ contextBridge.exposeInMainWorld("electronApi", {
       cb();
     });
   },
+  helpers(keyName, payload) {
+    return ipcRenderer.invoke("helpers", keyName, payload);
+  },
 });

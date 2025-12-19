@@ -17,8 +17,8 @@ const {
   getActiveStoreKey,
 } = require("./notificationWindow");
 const hibernate = require("./hibernate");
-const { isScheduleActive } = require("./utils/validators");
 const BootScheduler = require("./schedulers/boot-scheduler");
+const { joinArr } = require("./utils/helper");
 
 app.setAppUserModelId("com.example.hibernator");
 
@@ -109,7 +109,7 @@ app.whenReady().then(() => {
 
   createMainWindow();
   createTray();
-  bootScheduler.shouldHibernate();
+  bootScheduler.bootstrap();
   hibernateScheduler.bootstrap();
 
   const openedAtLogin = app.getLoginItemSettings().wasOpenedAtLogin;
@@ -143,6 +143,13 @@ ipcMain.handle(CONSTANTS.MESSAGE_DIALOG, (_, message) => {
   return dialog.showErrorBox("Warning", message);
 });
 
+ipcMain.handle("helpers", (_, keyName, payload) => {
+  switch (keyName) {
+    case "join-array":
+      return joinArr(payload);
+  }
+});
+
 // HIBERNATE HANDLERS
 
 ipcMain.handle(CONSTANTS.ADD_HIB_SCHEDULE, (_, s) => {
@@ -156,11 +163,11 @@ ipcMain.handle(CONSTANTS.CANCEL_HIB_SCHEDULE, (_, id) => {
 // BOOT HANDLERS
 
 ipcMain.handle(CONSTANTS.ADD_BOOT_SCHEDULE, (_, s) => {
-  return bootScheduler.add(s);
+  return bootScheduler.add(s, CONSTANTS.STORE_BOOT_KEY);
 });
 
 ipcMain.handle(CONSTANTS.CANCEL_BOOT_SCHEDULE, (_, id) => {
-  return bootScheduler.cancelSchedule(CONSTANTS.STORE_BOOT_KEY, id);
+  return bootScheduler.cancelSchedule(id, CONSTANTS.STORE_BOOT_KEY);
 });
 
 // NOTIFICATION HANDLERS
@@ -180,7 +187,7 @@ ipcMain.handle("close-notification", (_, filterFromList) => {
   if (filterFromList) {
     const scheduler = getScheduler(storeKey);
 
-    scheduler.shouldRemoveActiveScheduleFromList(storeKey, mainWindow);
+    scheduler.shouldRemoveActiveScheduleFromList(mainWindow, storeKey);
   }
 });
 

@@ -19,6 +19,8 @@
       less_strict: 15,
     }[schedule.mode];
 
+    countdown.innerHTML = `${currentSeconds} seconds remaining...`;
+
     const id = setInterval(() => {
       currentSeconds = --currentSeconds;
 

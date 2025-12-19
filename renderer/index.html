@@ -18,12 +18,17 @@
             <button id="boot_stop_all">Stop All</button>
             <label
               >Hour:
-              <input id="boot_hr" type="number" min="0" max="23" value="23"
+              <input id="boot_hr" type="number" min="1" max="12" value="12"
             /></label>
             <label
               >Minute:
               <input id="boot_min" type="number" min="0" max="59" value="1"
             /></label>
+
+            <select id="boot_meridiem">
+              <option value="am" selected>AM</option>
+              <option value="pm" selected>PM</option>
+            </select>
 
             <div>
               <label class="section-title">Schedule Days</label>
@@ -156,12 +161,16 @@
             <button id="hib_stop_all">Stop All</button>
             <label
               >Hour:
-              <input id="hib_hr" type="number" min="0" max="23" value="23"
+              <input id="hib_hr" type="number" min="1" max="12" value="12"
             /></label>
             <label
               >Minute:
               <input id="hib_min" type="number" min="0" max="59" value="1"
             /></label>
+            <select id="hib_meridiem">
+              <option value="am" selected>AM</option>
+              <option value="pm" selected>PM</option>
+            </select>
 
             <div>
               <label class="section-title">Schedule Days</label>

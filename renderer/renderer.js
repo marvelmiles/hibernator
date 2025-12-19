@@ -18,6 +18,7 @@
     return {
       minuteEl: document.getElementById(`${domType}_min`),
       hourEl: document.getElementById(`${domType}_hr`),
+      meridiemEl: document.getElementById(`${domType}_meridiem`),
       modeEl: document.getElementById(`${domType}_schedule_mode`),
       scheduleBtnEl: document.getElementById(`${domType}_schedule_btn`),
       listEl: document.getElementById(`${domType}_schedule_list`),
@@ -25,7 +26,9 @@
       presetsEl: document.querySelectorAll(
         `input[name="${domType}_days_preset"]`
       ),
-      customDaysEl: document.getElementById(`${domType}_days_preset_custom`),
+      customDaysRootEl: document.getElementById(
+        `${domType}_custom_preset_days`
+      ),
       repeatFreqEl: document.getElementById(`${domType}_repeat_freq`),
     };
   };
@@ -35,7 +38,6 @@
 
     const {
       presetsEl,
-      customDaysEl,
       scheduleBtnEl,
       stopAllBtnEl,
       listEl,
@@ -43,6 +45,8 @@
       minuteEl,
       modeEl,
       repeatFreqEl,
+      customDaysRootEl,
+      meridiemEl,
     } = getDoms(domType);
 
     const renderList = async () => {
@@ -53,7 +57,7 @@
 
       listEl.innerHTML = "";
 
-      schedules.forEach((s) => {
+      schedules.forEach(async (s) => {
         const btn = document.createElement("button");
 
         btn.innerHTML = "Stop";
@@ -80,6 +84,27 @@
     
       <div>
     <div class="minute">Schedule Days: ${s.preset}</div>
+    <div class="minute">Repeat Frequency: ${
+      s.repeat ? "Repeat Weekly" : "Repeat Once"
+    }</div>
+      <div class="minute">Days: ${[
+        await api.helpers(
+          "join-array",
+          s.days.map(
+            (dayIndex) =>
+              ({
+                0: "Sunday",
+                1: "Monday",
+                2: "Tuesday",
+                3: "Wednesday",
+                4: "Thursday",
+                5: "Friday",
+                6: "Saturday",
+              }[dayIndex])
+          )
+        ),
+      ]}</div>
+    
     </div>
     `;
 
@@ -96,26 +121,47 @@
       });
     };
 
+    const now = new Date();
+
+    const hour24 = now.getHours();
+    const minute = now.getMinutes();
+
+    let hour12 = hour24 % 12;
+    if (hour12 === 0) hour12 = 12;
+
+    hourEl.value = hour12;
+
+    minuteEl.value = minute;
+
+    meridiemEl.value = hour24 >= 12 ? "pm" : "am";
+
     presetsEl.forEach((el) => {
       el.onchange = (e) => {
         const value = e.target.value;
-        if (value === "custom") customDaysEl.style.display = "block";
-        else customDaysEl.style.display = "none";
+        if (value === "custom") customDaysRootEl.style.display = "block";
+        else customDaysRootEl.style.display = "none";
       };
     });
 
     scheduleBtnEl.onclick = async () => {
-      const hour = Number(hourEl.value);
-      const minute = Number(minuteEl.value);
+      let hour = Number(hourEl.value);
+      let minute = Number(minuteEl.value);
 
-      if (hour > 23 || hour < 0) {
-        showError("Invalid hour value. Should be between 0 - 23.");
+      const meridiem = meridiemEl.value;
+
+      if (hour > 12 || hour < 1) {
+        showError("Invalid hour value. Should be between 1 - 12.");
         return;
       }
+
       if (minute > 59 || minute < 0) {
         showError("Invalid minute value. Should be between 0 - 59.");
         return;
       }
+
+      if (meridiem === "am") {
+        if (hour === 12) hour = 0;
+      } else if (hour !== 12) hour = hour + 12;
 
       const hibSchType = document.querySelector(
         `input[name="${domType}_days_preset"]:checked`
@@ -128,7 +174,7 @@
         case "custom":
           days = Array.from(
             document.querySelectorAll(
-              `input[name="${domType}_schedule_day"]:checked`
+              `input[name="${domType}_custom_preset_day"]:checked`
             )
           ).map((el) => Number(el.value));
           break;
