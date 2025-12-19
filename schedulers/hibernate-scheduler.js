@@ -24,10 +24,12 @@ class HibernateScheduler extends Scheduler {
       this.shouldShowNotification(s, CONSTANTS.STORE_HIB_KEY);
     });
 
-    this.entities = entities;
+    this.entities = [...entities, ...this.entities];
   }
 
-  schedule({ hour, minute, days, repeat, id }, cb) {
+  schedule({ hour, minute, days, repeat, id, disable }, cb) {
+    if (disable) return [];
+
     const entities = [];
 
     days.forEach((dayIndex) => {
@@ -69,11 +71,9 @@ class HibernateScheduler extends Scheduler {
     this.entities = [];
   }
 
-  cancelJob(scheduleId) {
-    const todayIndex = new Date().getDay();
-
+  cancelJob(scheduleId, dayIndex = new Date().getDay()) {
     const entity = this.entities.find(
-      (s) => s.id === scheduleId && todayIndex === s.dayIndex
+      (s) => s.id === scheduleId && dayIndex === s.dayIndex
     );
 
     if (!entity) {
@@ -89,7 +89,7 @@ class HibernateScheduler extends Scheduler {
     entity.job.cancel();
 
     this.entities = this.entities.filter(
-      (s) => s.id !== scheduleId && todayIndex === s.dayIndex
+      (s) => s.id !== scheduleId && dayIndex === s.dayIndex
     );
   }
 

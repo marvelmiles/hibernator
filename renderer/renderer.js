@@ -21,6 +21,9 @@
       meridiemEl: document.getElementById(`${domType}_meridiem`),
       modeEl: document.getElementById(`${domType}_schedule_mode`),
       scheduleBtnEl: document.getElementById(`${domType}_schedule_btn`),
+      addBtnEl: document.getElementById(`${domType}_add_btn`),
+      closeAddBtnEl: document.getElementById(`${domType}_close_add_btn`),
+      scheduleFormEl: document.getElementById(`${domType}_schedule_form`),
       listEl: document.getElementById(`${domType}_schedule_list`),
       stopAllBtnEl: document.getElementById(`${domType}_stop_all`),
       presetsEl: document.querySelectorAll(
@@ -31,6 +34,21 @@
       ),
       repeatFreqEl: document.getElementById(`${domType}_repeat_freq`),
     };
+  };
+
+  const to12HourFromat = (hour24, minute) => {
+    let hour = hour24 % 12;
+    if (hour === 0) hour = 12;
+
+    return {
+      hour,
+      minute,
+      meridiem: hour24 >= 12 ? "pm" : "am",
+    };
+  };
+
+  const padWithZero = (value, size = 2) => {
+    return String(value).padStart(size, "0");
   };
 
   const setupDoms = async (domType) => {
@@ -47,6 +65,9 @@
       repeatFreqEl,
       customDaysRootEl,
       meridiemEl,
+      addBtnEl,
+      scheduleFormEl,
+      closeAddBtnEl,
     } = getDoms(domType);
 
     const renderList = async () => {
@@ -58,82 +79,111 @@
       listEl.innerHTML = "";
 
       schedules.forEach(async (s) => {
-        const btn = document.createElement("button");
+        const card = document.createElement("div");
 
-        btn.innerHTML = "Stop";
+        const { hour, minute, meridiem } = to12HourFromat(s.hour, s.minute);
 
-        btn.onclick = async () => {
+        card.className = "schedule-card";
+        card.dataset.id = s.id;
+
+        // ----- Header -----
+        const header = document.createElement("div");
+        header.className = "card-header";
+
+        const time = document.createElement("div");
+        time.className = "time";
+        time.innerHTML = `${padWithZero(hour)}:${padWithZero(
+          minute
+        )}<span>${meridiem}</span>`;
+
+        const actions = document.createElement("div");
+        actions.className = "actions";
+
+        const toggleLabel = document.createElement("label");
+        toggleLabel.className = "toggle";
+
+        const toggleInput = document.createElement("input");
+        toggleInput.type = "checkbox";
+        toggleInput.checked = !s.disable;
+
+        const toggleSpan = document.createElement("span");
+
+        toggleLabel.append(toggleInput, toggleSpan);
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.className = "delete-btn";
+        deleteBtn.title = "Delete schedule";
+        deleteBtn.textContent = "🗑️";
+
+        actions.append(toggleLabel, deleteBtn);
+        header.append(time, actions);
+
+        // ----- Meta -----
+        const meta = document.createElement("div");
+        meta.className = "card-meta";
+
+        meta.innerHTML = `
+    <div class="meta-item">🔁 <span>Repeat ${
+      s.repeat ? "Weekly" : "Once"
+    }</span></div>
+    <div class="meta-item">⚙️ <span>${
+      {
+        very_strict: "Very strict",
+        medium_strict: "Medium strict",
+        less_strict: "Less strict",
+      }[s.mode]
+    }</span></div>
+  `;
+
+        // ----- Days -----
+        const days = document.createElement("div");
+        days.className = "days";
+
+        s.days.forEach((dayIndex) => {
+          const isActive = !s.disable && !s.completedTask.includes(dayIndex);
+
+          const span = document.createElement("span");
+          span.className = `day ${isActive ? "active" : ""}`;
+          span.title = isActive ? "Active Schedule" : "Inactive Schedule";
+
+          span.textContent = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"][
+            dayIndex
+          ];
+          days.appendChild(span);
+        });
+
+        // --- EVENTS ----
+
+        deleteBtn.onclick = async () => {
           if (isBoot) await api.boot.cancelSchedule(s.id);
           else await api.hibernate.cancelSchedule(s.id);
 
           await renderList();
         };
 
-        const d = document.createElement("div");
+        toggleInput.onclick = async () => {
+          if (isBoot) api.boot.disableSchedule(s.id);
+          else api.hibernate.disableSchedule(s.id);
+        };
 
-        d.innerHTML = `
-          <div class="hour">Hour: ${s.hour}</div>
-      <div class="minute">Minute: ${s.minute}</div>
-      <div class="level">Mode: ${
-        {
-          very_strict: "Very Strict",
-          less_strict: "Less Strict",
-          medium_strict: "Medium Strict",
-        }[s.mode]
-      }</div>
-    
-      <div>
-    <div class="minute">Schedule Days: ${s.preset}</div>
-    <div class="minute">Repeat Frequency: ${
-      s.repeat ? "Repeat Weekly" : "Repeat Once"
-    }</div>
-      <div class="minute">Days: ${[
-        await api.helpers(
-          "join-array",
-          s.days.map(
-            (dayIndex) =>
-              ({
-                0: "Sunday",
-                1: "Monday",
-                2: "Tuesday",
-                3: "Wednesday",
-                4: "Thursday",
-                5: "Friday",
-                6: "Saturday",
-              }[dayIndex])
-          )
-        ),
-      ]}</div>
-    
-    </div>
-    `;
+        card.append(header, meta, days);
 
-        d.appendChild(btn);
-
-        const div = document.createElement("div");
-
-        const hr = document.createElement("hr");
-
-        div.appendChild(d);
-        div.appendChild(hr);
-
-        listEl.appendChild(div);
+        listEl.appendChild(card);
       });
     };
 
-    const now = new Date();
+    const todaysDate = new Date();
 
-    const hour24 = now.getHours();
-    const minute = now.getMinutes();
+    const { hour, minute, meridiem } = to12HourFromat(
+      todaysDate.getHours(),
+      todaysDate.getMinutes()
+    );
 
-    let hour12 = hour24 % 12;
-    if (hour12 === 0) hour12 = 12;
-
-    hourEl.value = hour12;
+    hourEl.value = hour;
 
     minuteEl.value = minute;
 
-    meridiemEl.value = hour24 >= 12 ? "pm" : "am";
+    meridiemEl.value = meridiem;
 
     presetsEl.forEach((el) => {
       el.onchange = (e) => {
@@ -142,6 +192,15 @@
         else customDaysRootEl.style.display = "none";
       };
     });
+
+    addBtnEl.onclick = () => {
+      scheduleFormEl.style.display = "flex";
+    };
+
+    closeAddBtnEl.onclick = () => {
+      scheduleFormEl.reset();
+      scheduleFormEl.style.display = "none";
+    };
 
     scheduleBtnEl.onclick = async () => {
       let hour = Number(hourEl.value);
@@ -223,7 +282,7 @@
     });
   };
 
-  setupDoms("boot");
+  // setupDoms("boot");
 
   setupDoms("hib");
 })();

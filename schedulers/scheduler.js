@@ -108,9 +108,7 @@ class Scheduler {
       return;
     }
 
-    list.push(schedule);
-
-    this.store.set(storeKey, list);
+    this.addToStore(schedule, storeKey);
 
     return schedule;
   }
@@ -125,6 +123,10 @@ class Scheduler {
       .filter((s) => s.id !== scheduleId);
 
     this.store.set(storeKey, list);
+  }
+
+  addToStore(schedule, storeKey) {
+    this.store.set(storeKey, [schedule, ...this.store.get(storeKey, [])]);
   }
 
   markTodayTask(scheduleId, storeKey) {
@@ -198,6 +200,29 @@ class Scheduler {
     this.store.set(storeKey, list);
 
     return clearAll;
+  }
+
+  toggleDisableSchedule(scheduleId, storeKey) {
+    const list = this.store.get(storeKey, []).map((s) => {
+      if (s.id === scheduleId) {
+        if (storeKey === CONSTANTS.STORE_HIB_KEY) {
+          const entities = (this.entities || []).filter(
+            (e) => e.id === scheduleId
+          );
+
+          for (const { id, dayIndex } of entities) {
+            if (id === scheduleId) {
+              if (s.disable) this.scheduleJob(s);
+              else this.cancelJob(scheduleId, dayIndex);
+            }
+          }
+        }
+
+        return { ...s, disable: !s.disable };
+      } else return s;
+    });
+
+    this.store.set(storeKey, list);
   }
 }
 

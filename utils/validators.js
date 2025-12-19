@@ -1,5 +1,5 @@
-const isScheduleActive = ({ repeat, days, completedTask }) => {
-  if (repeat) return true;
+const isScheduleActive = ({ repeat, days, completedTask, disable }) => {
+  if (repeat || disable) return true;
 
   return completedTask.length < days.length;
 };

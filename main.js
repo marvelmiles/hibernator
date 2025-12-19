@@ -64,6 +64,7 @@ const createMainWindow = () => {
   mainWindow = new BrowserWindow({
     show: false,
     width: winWidth,
+    minWidth: 500,
     height: winHeight,
     x: width - winWidth,
     y: 0,
@@ -160,6 +161,10 @@ ipcMain.handle(CONSTANTS.CANCEL_HIB_SCHEDULE, (_, id) => {
   return hibernateScheduler.cancelSchedule(id);
 });
 
+ipcMain.handle(CONSTANTS.DISABLE_HIB_SCHEDULE, (_, id) => {
+  return hibernateScheduler.toggleDisableSchedule(id, CONSTANTS.STORE_HIB_KEY);
+});
+
 // BOOT HANDLERS
 
 ipcMain.handle(CONSTANTS.ADD_BOOT_SCHEDULE, (_, s) => {
@@ -168,6 +173,10 @@ ipcMain.handle(CONSTANTS.ADD_BOOT_SCHEDULE, (_, s) => {
 
 ipcMain.handle(CONSTANTS.CANCEL_BOOT_SCHEDULE, (_, id) => {
   return bootScheduler.cancelSchedule(id, CONSTANTS.STORE_BOOT_KEY);
+});
+
+ipcMain.handle(CONSTANTS.DISABLE_BOOT_SCHEDULE, (_, id) => {
+  return bootScheduler.toggleDisableSchedule(id, CONSTANTS.STORE_BOOT_KEY);
 });
 
 // NOTIFICATION HANDLERS

@@ -17,6 +17,8 @@ class BootScheduler extends Scheduler {
     const todayIndex = new Date().getDay();
 
     list.forEach((s) => {
+      if (s.disable) return;
+
       const dayIndex = s.days.find(
         (dayIndex) =>
           dayIndex === todayIndex && !s.completedTask.includes(todayIndex)
