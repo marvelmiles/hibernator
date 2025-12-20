@@ -33,6 +33,7 @@
         `${domType}_custom_preset_days`
       ),
       repeatFreqEl: document.getElementById(`${domType}_repeat_freq`),
+      modeDescEl: document.getElementById(`${domType}_mode_desc`),
     };
   };
 
@@ -68,13 +69,23 @@
       addBtnEl,
       scheduleFormEl,
       closeAddBtnEl,
+      modeDescEl,
     } = getDoms(domType);
 
-    const renderList = async () => {
+    const getSchedules = async () => {
       const { hibernateSchedules = [], bootSchedules = [] } =
         await api.getStore();
 
-      const schedules = isBoot ? bootSchedules : hibernateSchedules;
+      return isBoot ? bootSchedules : hibernateSchedules;
+    };
+
+    const renderList = async () => {
+      const schedules = await getSchedules();
+
+      if (schedules.length) stopAllBtnEl.classList.remove("disable");
+      else stopAllBtnEl.classList.add("disable");
+
+      stopAllBtnEl.disabled = !schedules.length;
 
       listEl.innerHTML = "";
 
@@ -105,6 +116,7 @@
         const toggleInput = document.createElement("input");
         toggleInput.type = "checkbox";
         toggleInput.checked = !s.disable;
+        toggleInput.title = s.disable ? "Enable Schedule" : "Disable Schedule";
 
         const toggleSpan = document.createElement("span");
 
@@ -123,14 +135,14 @@
         meta.className = "card-meta";
 
         meta.innerHTML = `
-    <div class="meta-item">🔁 <span>Repeat ${
-      s.repeat ? "Weekly" : "Once"
-    }</span></div>
+    <div class="meta-item">${s.repeat ? "🔁" : "🔁¹"} <span>Repeat ${
+          s.repeat ? "Weekly" : "Once"
+        }</span></div>
     <div class="meta-item">⚙️ <span>${
       {
-        very_strict: "Very strict",
-        medium_strict: "Medium strict",
-        less_strict: "Less strict",
+        very_strict: "Strict",
+        medium_strict: "Moderate",
+        less_strict: "Flexible",
       }[s.mode]
     }</span></div>
   `;
@@ -164,6 +176,7 @@
         toggleInput.onclick = async () => {
           if (isBoot) api.boot.disableSchedule(s.id);
           else api.hibernate.disableSchedule(s.id);
+          await renderList();
         };
 
         card.append(header, meta, days);
@@ -193,14 +206,33 @@
       };
     });
 
+    modeEl.onchange = (e) => {
+      const value = e.target.value;
+      switch (value) {
+        case "less_strict":
+          modeDescEl.innerHTML =
+            "You are allowed to cancel or snooze hibernation.";
+          break;
+        case "medium_strict":
+          modeDescEl.innerHTML = "You are allowed to snooze hibernation only.";
+          break;
+        default:
+          modeDescEl.innerHTML =
+            "Your device will be hibernated, enjoy your you time.";
+          break;
+      }
+    };
+
     addBtnEl.onclick = () => {
       scheduleFormEl.style.display = "flex";
     };
 
-    closeAddBtnEl.onclick = () => {
+    const onCloseAddSchedule = () => {
       scheduleFormEl.reset();
       scheduleFormEl.style.display = "none";
     };
+
+    closeAddBtnEl.onclick = onCloseAddSchedule;
 
     scheduleBtnEl.onclick = async () => {
       let hour = Number(hourEl.value);
@@ -265,6 +297,8 @@
       if (isBoot) await api.boot.addSchedule(schedule);
       else await api.hibernate.addSchedule(schedule);
 
+      onCloseAddSchedule();
+
       await renderList();
     };
 
@@ -282,7 +316,7 @@
     });
   };
 
-  // setupDoms("boot");
+  setupDoms("boot");
 
-  setupDoms("hib");
+  // setupDoms("hib");
 })();

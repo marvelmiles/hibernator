@@ -71,6 +71,14 @@ class HibernateScheduler extends Scheduler {
     this.entities = [];
   }
 
+  removeEntity(entity) {
+    entity.job.cancel();
+
+    this.entities = this.entities.filter(
+      (e) => e.id !== entity.id || entity.dayIndex !== e.dayIndex
+    );
+  }
+
   cancelJob(scheduleId, dayIndex = new Date().getDay()) {
     const entity = this.entities.find(
       (s) => s.id === scheduleId && dayIndex === s.dayIndex
@@ -86,11 +94,7 @@ class HibernateScheduler extends Scheduler {
       return;
     }
 
-    entity.job.cancel();
-
-    this.entities = this.entities.filter(
-      (s) => s.id !== scheduleId && dayIndex === s.dayIndex
-    );
+    this.removeEntity(entity);
   }
 
   cancelSchedule(scheduleId) {

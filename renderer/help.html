@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Help</title>
+    <link rel="stylesheet" href="styles/help.css" />
+  </head>
+
+  <body>
+    <section>
+      <h2>Schedule Mode</h2>
+      <p>
+        Schedule mode determines which action buttons are available in the
+        notification window before your device hibernates.
+      </p>
+
+      <ul>
+        <li>
+          <strong>Strict Mode</strong> – No optional buttons. Your device will
+          hibernate automatically based on the schedule.
+        </li>
+        <li>
+          <strong>Moderate Mode</strong> – You can snooze hibernation, but you
+          cannot cancel it.
+        </li>
+        <li>
+          <strong>Flexible Mode</strong> – You can either snooze or cancel
+          hibernation.
+        </li>
+      </ul>
+
+      <div class="note">
+        Snoozing hibernation extends the schedule by 5 minutes only. Hibernation
+        will occur automatically after 3 snoozes.
+      </div>
+    </section>
+
+    <section>
+      <h2>Enabling / Disabling Schedule</h2>
+      <p>
+        You can enable or disable a schedule by clicking the checkbox on the
+        schedule card.
+      </p>
+      <p>
+        Disabling a schedule pauses its hibernation task until it is enabled
+        again, as long as the scheduled time period has not already passed.
+      </p>
+    </section>
+
+    <section>
+      <h2>Frequently Asked Questions</h2>
+
+      <div class="faq-item">
+        <div class="faq-question">
+          <span
+            >What is the difference between a boot schedule and a hibernate
+            schedule?</span
+          >
+          <span class="chevron">⌄</span>
+        </div>
+        <div class="faq-answer">
+          <p>
+            <em><b>A boot schedule</b> </em> defines when you are allowed to use
+            your device. Outside of this time window, the device will not remain
+            active. <br />
+            <br />
+            <em><b>A hibernate schedule</b></em> determines when your device
+            will automatically hibernate (turn off) based on the configured
+            schedule.
+          </p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">
+          <span>Can I set how long my device hibernates?</span>
+          <span class="chevron">⌄</span>
+        </div>
+        <div class="faq-answer">
+          <p>
+            You control how long your device remains hibernated by setting a
+            boot schedule for that day. Once configured, you can choose
+            <em>Hibernate Now</em> to apply it immediately.
+          </p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">
+          <span>What happens if I don’t want my device to hibernate?</span>
+          <span class="chevron">⌄</span>
+        </div>
+        <div class="faq-answer">
+          <p>
+            Depending on the selected schedule mode, you may be able to snooze
+            or cancel the hibernation. In Strict Mode, no action is available
+            and hibernation will proceed automatically.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <script src="scripts/help.js"></script>
+  </body>
+</html>

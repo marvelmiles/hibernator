@@ -1,3 +1,6 @@
+const { app, nativeImage } = require("electron");
+const path = require("path");
+
 const joinArr = (arr, sep = ", ", lastSep = " and ") => {
   if (arr.length === 0) return "";
   if (arr.length === 1) return arr[0];
@@ -8,4 +11,28 @@ const joinArr = (arr, sep = ", ", lastSep = " and ") => {
   return `${others}${lastSep}${last}`;
 };
 
-module.exports = { joinArr };
+const setAppIcon = () => {
+  let iconFile;
+
+  switch (process.platform) {
+    case "darwin":
+      iconFile = "icon.icns";
+      break;
+    case "win32":
+      iconFile = "icon.ico";
+      break;
+    default:
+      iconFile = "icon.png";
+  }
+
+  const iconPath = path.join(process.cwd(), iconFile);
+
+  if (app.dock && process.platform === "darwin") {
+    const dockIcon = nativeImage.createFromPath(iconPath);
+    app.dock.setIcon(dockIcon);
+  }
+
+  return iconPath;
+};
+
+module.exports = { joinArr, setAppIcon };

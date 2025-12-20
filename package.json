@@ -22,10 +22,15 @@
   "build": {
     "appId": "com.example.hibernator",
     "productName": "Hibernator",
+    "mac": {
+      "icon": "icon.icns"
+    },
+    "linux": {
+      "icon": "icon.png"
+    },
     "win": {
       "target": "nsis",
-      "forceCodeSigning": false,
-      "verifyUpdateCodeSignature": false
+      "icon": "icon.ico"
     },
     "nsis": {
       "oneClick": false,

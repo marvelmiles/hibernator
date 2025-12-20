@@ -2,7 +2,7 @@ const { dialog } = require("electron");
 const CONSTANTS = require("../config/constants");
 const { v4: uniqId } = require("uuid");
 const { joinArr } = require("../utils/helper");
-const { showHibernateNotification } = require("../notificationWindow");
+const { showHibernateNotification } = require("../windows/notificationWindow");
 const { isScheduleActive } = require("../utils/validators");
 
 class Scheduler {
@@ -150,6 +150,12 @@ class Scheduler {
   }
 
   shouldShowNotification(schedule, storeKey) {
+    const disable = this.store
+      .get(storeKey, [])
+      .find((s) => s.id === schedule.id)?.disable;
+
+    if (disable) return;
+
     const isHib = storeKey === CONSTANTS.STORE_HIB_KEY;
 
     if (!this.activeSchedule) {
@@ -210,10 +216,10 @@ class Scheduler {
             (e) => e.id === scheduleId
           );
 
-          for (const { id, dayIndex } of entities) {
-            if (id === scheduleId) {
+          for (const entity of entities) {
+            if (entity.id === scheduleId) {
               if (s.disable) this.scheduleJob(s);
-              else this.cancelJob(scheduleId, dayIndex);
+              else this.removeEntity(entity);
             }
           }
         }

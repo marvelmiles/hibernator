@@ -1,0 +1,250 @@
+@import url("./style.css");
+
+.mode-desc {
+  color: #3b82f6;
+}
+
+#app {
+  max-width: 880px;
+  margin: 0 auto;
+}
+
+.title {
+  font-size: 1.25rem;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.title::before {
+  content: "⏰";
+}
+
+section {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 14px;
+  padding: 18px;
+  margin-bottom: 40px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+}
+
+section:last-of-type {
+  margin-bottom: 0;
+}
+
+.header-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.schedule-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.time-row,
+.buttons-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.repeat-mode-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.repeat-mode-row label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: max-content;
+  cursor: pointer;
+}
+
+.days-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  font-size: 0.8rem;
+}
+
+.days-row label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.custom-days {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 0.75rem;
+}
+
+.custom-days label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.schedule_list {
+  margin-top: 12px;
+  font-size: 0.85rem;
+  opacity: 0.85;
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+@media (min-width: 600px) {
+  .schedule_list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 900px) {
+  .schedule_list {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.schedule_list:empty::before,
+.schedule_list:empty::before {
+  content: "No schedules added";
+  font-size: 18px;
+}
+
+.schedule-card {
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.18),
+    rgba(15, 23, 42, 0.95)
+  );
+  border-radius: 16px;
+  padding: 16px 18px;
+  display: grid;
+  gap: 20px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.time {
+  font-size: 2.2rem;
+  font-weight: 700;
+  letter-spacing: -1px;
+}
+
+.time span {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-left: 4px;
+  opacity: 0.85;
+  text-transform: uppercase;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 0px;
+}
+
+.delete-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.delete-btn:hover {
+  opacity: 1;
+}
+
+.toggle {
+  position: relative;
+  width: 42px;
+  height: 22px;
+  cursor: pointer;
+}
+
+.toggle input {
+  display: none;
+}
+
+.toggle span {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+  transition: background 0.2s ease;
+}
+
+.toggle span::before {
+  content: "";
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #020617;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.2s ease;
+}
+
+.toggle input:checked + span {
+  background: #60a5fa;
+}
+
+.toggle input:checked + span::before {
+  transform: translateX(20px);
+}
+
+.card-meta {
+  display: flex;
+  gap: 14px;
+  font-size: 0.8rem;
+  opacity: 0.9;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.days {
+  display: flex;
+  gap: 6px;
+}
+
+.day {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 0.7rem;
+  background: rgba(255, 255, 255, 0.12);
+  opacity: 0.5;
+}
+
+.day.active {
+  background: #3b82f6;
+  opacity: 1;
+  color: #fff;
+}

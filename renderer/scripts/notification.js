@@ -13,11 +13,12 @@
   const proceedBtn = document.getElementById("proceed");
 
   window.notificationApi.onShowNotification(({ schedule }) => {
-    let currentSeconds = {
-      very_strict: 5,
-      medium_strict: 10,
-      less_strict: 15,
-    }[schedule.mode];
+    let currentSeconds =
+      {
+        very_strict: 5,
+        medium_strict: 10,
+        less_strict: 15,
+      }[schedule.mode] || 15;
 
     countdown.innerHTML = `${currentSeconds} seconds remaining...`;
 

@@ -4,476 +4,70 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Hibernator</title>
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
-    />
-    <style>
-      body {
-        margin: 0;
-        padding: 24px;
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-          Roboto, Ubuntu, sans-serif;
-        background: linear-gradient(135deg, #0f172a, #020617);
-        color: #e5e7eb;
-      }
-
-      #app {
-        max-width: 880px;
-        margin: 0 auto;
-      }
-
-      h1 {
-        font-size: 2rem;
-        margin-bottom: 20px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-      }
-
-      h1::before {
-        content: "💤";
-      }
-
-      h2 {
-        font-size: 1.25rem;
-        margin-bottom: 12px;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-      }
-      h2::before {
-        content: "⏰";
-      }
-
-      section {
-        background: rgba(255, 255, 255, 0.04);
-        border-radius: 14px;
-        padding: 18px;
-        margin-bottom: 18px;
-        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
-      }
-
-      hr {
-        border: none;
-        height: 1px;
-        background: rgba(255, 255, 255, 0.06);
-        margin: 16px 0;
-      }
-
-      /* ---------- ADD SCHEDULE FORM ---------- */
-      .schedule-form {
-        display: none;
-        flex-direction: column;
-        gap: 20px;
-      }
-
-      .time-row,
-      .repeat-mode-row,
-      .buttons-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        align-items: center;
-      }
-
-      .repeat-mode-row > label {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-
-      input[type="number"],
-      select {
-        padding: 10px;
-        border-radius: 8px;
-        border: 1px solid rgba(255, 255, 255, 0.14);
-        background: rgba(0, 0, 0, 0.35);
-        color: #e5e7eb;
-        outline: none;
-      }
-
-      input[type="number"]:focus,
-      select:focus {
-        border-color: #60a5fa;
-      }
-
-      button {
-        height: 34px;
-        padding: 0 14px;
-        border-radius: 10px;
-        border: none;
-        cursor: pointer;
-        font-size: 0.8rem;
-        font-weight: 600;
-        white-space: nowrap;
-      }
-
-      .schedule_btn {
-        background: #2563eb;
-        color: white;
-      }
-
-      /* ---------- DAYS ---------- */
-      .days-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        align-items: center;
-        font-size: 0.8rem;
-      }
-
-      .days-row label {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        cursor: pointer;
-      }
-
-      .custom-days {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        margin-top: 6px;
-        font-size: 0.75rem;
-      }
-
-      .custom-days label {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-      }
-
-      input[type="radio"] {
-        appearance: none;
-        width: 14px;
-        height: 14px;
-        border-radius: 50%;
-        border: 2px solid rgba(255, 255, 255, 0.4);
-        display: inline-grid;
-        place-content: center;
-        cursor: pointer;
-      }
-
-      input[type="radio"]::before {
-        content: "";
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        transform: scale(0);
-        transition: transform 0.12s ease-in-out;
-        background: #60a5fa;
-      }
-
-      input[type="radio"]:checked::before {
-        transform: scale(1);
-      }
-
-      input[type="checkbox"] {
-        appearance: none;
-        width: 32px;
-        height: 18px;
-        border-radius: 999px;
-        background: rgba(255, 255, 255, 0.25);
-        position: relative;
-        cursor: pointer;
-        transition: background 0.15s ease;
-      }
-
-      input[type="checkbox"]::before {
-        content: "";
-        width: 14px;
-        height: 14px;
-        border-radius: 50%;
-        background: #020617;
-        position: absolute;
-        top: 2px;
-        left: 2px;
-        transition: transform 0.15s ease;
-        cursor: pointer;
-      }
-
-      input[type="checkbox"]:checked {
-        background: #60a5fa;
-      }
-      input[type="checkbox"]:checked::before {
-        transform: translateX(14px);
-      }
-
-      .schedule_list {
-        margin-top: 12px;
-        font-size: 0.85rem;
-        opacity: 0.85;
-        display: grid;
-        gap: 20px;
-        grid-template-columns: repeat(1, minmax(0, 1fr));
-      }
-
-      @media (min-width: 600px) {
-        .schedule_list {
-          grid-template-columns: repeat(2, 1fr);
-        }
-      }
-
-      @media (min-width: 900px) {
-        .schedule_list {
-          grid-template-columns: repeat(3, 1fr);
-        }
-      }
-
-      .schedule_list:empty::before,
-      .schedule_list:empty::before {
-        content: "No schedules added";
-        opacity: 0.5;
-      }
-
-      .schedule-card {
-        background: linear-gradient(
-          135deg,
-          rgba(59, 130, 246, 0.18),
-          rgba(15, 23, 42, 0.95)
-        );
-        border-radius: 16px;
-        padding: 16px 18px;
-        display: grid;
-        gap: 20px;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-      }
-
-      /* ---------- HEADER ---------- */
-      .card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-
-      .time {
-        font-size: 2.2rem;
-        font-weight: 700;
-        letter-spacing: -1px;
-      }
-
-      .time span {
-        font-size: 0.85rem;
-        font-weight: 600;
-        margin-left: 4px;
-        opacity: 0.85;
-        text-transform: uppercase;
-      }
-
-      /* ---------- ACTIONS ---------- */
-      .actions {
-        display: flex;
-        align-items: center;
-        gap: 0px;
-      }
-
-      .delete-btn {
-        background: none;
-        border: none;
-        cursor: pointer;
-        font-size: 1rem;
-        opacity: 0.6;
-      }
-
-      .delete-btn:hover {
-        opacity: 1;
-      }
-
-      /* ---------- TOGGLE ---------- */
-      .toggle {
-        position: relative;
-        width: 42px;
-        height: 22px;
-      }
-
-      .toggle input {
-        display: none;
-      }
-
-      .toggle span {
-        position: absolute;
-        inset: 0;
-        background: rgba(255, 255, 255, 0.25);
-        border-radius: 999px;
-        transition: background 0.2s ease;
-      }
-
-      .toggle span::before {
-        content: "";
-        position: absolute;
-        width: 18px;
-        height: 18px;
-        border-radius: 50%;
-        background: #020617;
-        top: 2px;
-        left: 2px;
-        transition: transform 0.2s ease;
-      }
-
-      .toggle input:checked + span {
-        background: #60a5fa;
-      }
-
-      .toggle input:checked + span::before {
-        transform: translateX(20px);
-      }
-
-      /* ---------- META ---------- */
-      .card-meta {
-        display: flex;
-        gap: 14px;
-        font-size: 0.8rem;
-        opacity: 0.9;
-      }
-
-      .meta-item {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-      }
-
-      /* ---------- DAYS ---------- */
-      .days {
-        display: flex;
-        gap: 6px;
-      }
-
-      .day {
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
-        display: grid;
-        place-items: center;
-        font-size: 0.7rem;
-        background: rgba(255, 255, 255, 0.12);
-        opacity: 0.5;
-      }
-
-      .day.active {
-        background: #3b82f6;
-        opacity: 1;
-        color: #fff;
-      }
-
-      .header-row {
-        display: flex;
-        gap: 8px;
-        align-items: center;
-      }
-
-      .icon-btn {
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-        border: none;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-
-        font-size: 16px;
-        cursor: pointer;
-
-        background: rgba(255, 255, 255, 0.15);
-        color: #fff;
-
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
-
-        transition: transform 0.15s ease, box-shadow 0.15s ease,
-          background 0.15s ease;
-      }
-
-      .icon-btn:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
-      }
-
-      .icon-btn:active {
-        transform: translateY(0);
-        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
-      }
-
-      /* Add */
-      .icon-btn.primary {
-        background: linear-gradient(135deg, #4f46e5, #6366f1);
-      }
-
-      /* Stop All */
-      .icon-btn.danger {
-        background: linear-gradient(135deg, #dc2626, #ef4444);
-      }
-
-      .icon-btn.danger:hover {
-        background: linear-gradient(135deg, #b91c1c, #dc2626);
-      }
-
-      .stop_all {
-        background: #dc2626;
-        color: white;
-      }
-    </style>
+    <link rel="stylesheet" href="styles/index.css" />
   </head>
   <body>
     <div id="app">
-      <h1>Hibernator</h1>
+      <h1 class="app-icon-header">Hibernator</h1>
 
-      <!-- Hibernate schedules section structured same way -->
       <section>
         <div class="header-row">
-          <h2>Hibernate schedules</h2>
+          <h2 class="title">Boot schedules</h2>
           <div class="buttons-row">
             <button
               type="button"
-              id="hib_stop_all"
-              class="icon-btn stop_all"
-              class="icon-btn danger"
+              id="boot_add_btn"
+              class="icon-btn btn-primary"
+              title="Add schedule"
+              aria-label="Add schedule"
+            >
+              <svg class="icon" aria-hidden="true" viewBox="0 0 512 512">
+                <path
+                  d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200zm61.8-104.4l-84.9-61.7c-3.1-2.3-4.9-5.9-4.9-9.7V116c0-6.6 5.4-12 12-12h32c6.6 0 12 5.4 12 12v141.7l66.8 48.6c5.4 3.9 6.5 11.4 2.6 16.8L334.6 349c-3.9 5.3-11.4 6.5-16.8 2.6z"
+                />
+              </svg>
+            </button>
+            <button
+              type="button"
+              id="boot_stop_all"
+              class="icon-btn btn-danger"
               title="Stop all schedules"
               aria-label="Stop all schedules"
             >
               ⏹
             </button>
-
-            <button
-              type="button"
-              id="hib_add_btn"
-              class="icon-btn primary"
-              title="Add schedule"
-              aria-label="Add schedule"
-            >
-              +
-            </button>
           </div>
         </div>
-        <div id="hib_content">
-          <form class="schedule-form" id="hib_schedule_form">
+        <div id="boot_content">
+          <form class="schedule-form" id="boot_schedule_form">
             <div class="time-row">
               <label
                 >Hour:
-                <input id="hib_hr" type="number" min="1" max="12" value="12"
+                <input id="boot_hr" type="number" min="1" max="12" value="12"
               /></label>
               <label
                 >Minute:
-                <input id="hib_min" type="number" min="0" max="59" value="1"
+                <input id="boot_min" type="number" min="0" max="59" value="1"
               /></label>
-              <select id="hib_meridiem">
+              <select id="boot_meridiem">
                 <option value="am" selected>AM</option>
                 <option value="pm">PM</option>
               </select>
             </div>
 
+            <hr />
             <div class="days-row">
               <label
                 ><input
                   type="radio"
-                  name="hib_days_preset"
+                  name="boot_days_preset"
                   value="everyday"
                 />Everyday</label
               >
               <label
                 ><input
                   type="radio"
-                  name="hib_days_preset"
+                  name="boot_days_preset"
                   value="weekdays"
                   checked
                 />Weekdays</label
@@ -481,15 +75,15 @@
               <label
                 ><input
                   type="radio"
-                  name="hib_days_preset"
+                  name="boot_days_preset"
                   value="weekends"
                 />Weekends</label
               >
               <label
                 ><input
                   type="radio"
-                  id="hib_days_preset_custom"
-                  name="hib_days_preset"
+                  id="boot_days_preset_custom"
+                  name="boot_days_preset"
                   value="custom"
                 />Custom</label
               >
@@ -497,88 +91,108 @@
 
             <div
               class="custom-days"
-              id="hib_custom_preset_days"
+              id="boot_custom_preset_days"
               style="display: none"
             >
               <label
                 ><input
                   type="checkbox"
                   value="0"
-                  name="hib_custom_preset_day"
+                  name="boot_custom_preset_day"
                 />Sun</label
               >
               <label
                 ><input
                   type="checkbox"
                   value="1"
-                  name="hib_custom_preset_day"
+                  name="boot_custom_preset_day"
                 />Mon</label
               >
               <label
                 ><input
                   type="checkbox"
                   value="2"
-                  name="hib_custom_preset_day"
+                  name="boot_custom_preset_day"
                 />Tue</label
               >
               <label
                 ><input
                   type="checkbox"
                   value="3"
-                  name="hib_custom_preset_day"
+                  name="boot_custom_preset_day"
                 />Wed</label
               >
               <label
                 ><input
                   type="checkbox"
                   value="4"
-                  name="hib_custom_preset_day"
+                  name="boot_custom_preset_day"
                 />Thu</label
               >
               <label
                 ><input
                   type="checkbox"
                   value="5"
-                  name="hib_custom_preset_day"
+                  name="boot_custom_preset_day"
                 />Fri</label
               >
               <label
                 ><input
                   type="checkbox"
                   value="6"
-                  name="hib_custom_preset_day"
+                  name="boot_custom_preset_day"
                 />Sat</label
               >
             </div>
 
+            <hr />
+
             <div class="repeat-mode-row">
-              <label
-                ><input type="checkbox" id="hib_repeat_freq" checked />Repeat
-                Weekly</label
-              >
-              <label
-                >Mode:
-                <select id="hib_schedule_mode">
-                  <option value="less_strict">Less strict</option>
-                  <option value="medium_strict">Medium strict</option>
-                  <option value="very_strict" selected>Very strict</option>
-                </select>
-              </label>
+              <div>
+                <label
+                  ><input type="checkbox" id="boot_repeat_freq" checked />Repeat
+                  Weekly</label
+                >
+                <hr />
+              </div>
+
+              <div>
+                <label
+                  >Mode:
+                  <select id="boot_schedule_mode">
+                    <option value="less_strict">Flexible</option>
+                    <option value="medium_strict">Moderate</option>
+                    <option value="very_strict" selected>Strict</option>
+                  </select>
+                </label>
+
+                <p class="mode-desc" id="boot_mode_desc">
+                  Your device will be hibernated, enjoy your you time.
+                </p>
+
+                <hr />
+              </div>
             </div>
 
             <div class="buttons-row">
-              <button type="button" id="hib_close_add_btn">Cancel</button>
-              <button type="button" id="hib_schedule_btn" class="schedule_btn">
+              <button
+                type="button"
+                id="boot_close_add_btn"
+                class="btn-secondary"
+              >
+                Cancel
+              </button>
+              <button type="button" id="boot_schedule_btn" class="btn-primary">
                 Add
               </button>
             </div>
           </form>
 
           <hr />
-          <div id="hib_schedule_list" class="schedule_list"></div>
+          <div id="boot_schedule_list" class="schedule_list"></div>
         </div>
       </section>
     </div>
-    <script src="./renderer.js"></script>
+    <script src="scripts/renderer.js"></script>
   </body>
 </html>
