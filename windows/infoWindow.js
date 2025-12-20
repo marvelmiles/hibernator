@@ -9,7 +9,7 @@ function createInfoWindow(type) {
 
   const win = new BrowserWindow({
     width: 550,
-    height: 410,
+    height: 440,
     resizable: false,
     minimizable: false,
     maximizable: false,

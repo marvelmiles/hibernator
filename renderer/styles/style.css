@@ -89,11 +89,11 @@ input[type="checkbox"]:checked::before {
 button {
   height: 34px;
   padding: 0 14px;
-  border-radius: 10px;
+  border-radius: 5px;
   border: none;
   cursor: pointer;
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 1rem;
+  font-weight: 500;
   white-space: nowrap;
   transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
@@ -113,6 +113,7 @@ button:active {
   height: 30px;
   border-radius: 50%;
   border: none;
+  text-align: center;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -123,10 +124,16 @@ button:active {
   background: rgba(255, 255, 255, 0.15);
   color: #fff;
 
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-
   transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.icon-btn svg {
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  min-height: 18px;
+  flex-shrink: 0;
+  display: block;
 }
 
 .btn-primary {
@@ -140,8 +147,12 @@ button:active {
 }
 
 .btn-danger {
-  background: linear-gradient(135deg, #dc2626, #ef4444);
+  background: #dc2626;
   color: #fff;
+}
+
+.text-danger {
+  color: #ef4444;
 }
 
 button.disable,

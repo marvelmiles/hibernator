@@ -1,6 +1,7 @@
-const { BrowserWindow, shell } = require("electron");
+const { BrowserWindow, shell, app } = require("electron");
 const path = require("path");
 const { setAppIcon } = require("../utils/helper");
+const CONSTANTS = require("../config/constants");
 
 let window = null;
 
@@ -33,8 +34,14 @@ const showHibernateNotification = (schedule, storeKey) => {
   window.once("ready-to-show", () => {
     window.webContents.send("show-notification", {
       schedule,
+      storeKey,
+      isBoot: storeKey === CONSTANTS.STORE_BOOT_KEY,
     });
     shell.beep();
+
+    if (!app.isPackaged) {
+      // window.webContents.openDevTools({ mode: "detach" });
+    }
   });
 
   return window;
@@ -42,8 +49,6 @@ const showHibernateNotification = (schedule, storeKey) => {
 
 const closeHibernateNotification = (resetKey) => {
   let key = activeStoreKey;
-
-  return;
 
   if (resetKey) activeStoreKey = "";
 

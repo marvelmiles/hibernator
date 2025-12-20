@@ -35,4 +35,21 @@ const setAppIcon = () => {
   return iconPath;
 };
 
-module.exports = { joinArr, setAppIcon };
+const sortDays = (days) => {
+  const DAYS_ORDER = [
+    "sunday",
+    "monday",
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday",
+    "saturday",
+  ];
+
+  return [...days].sort(
+    (a, b) =>
+      DAYS_ORDER.indexOf(a.toLowerCase()) - DAYS_ORDER.indexOf(b.toLowerCase())
+  );
+};
+
+module.exports = { joinArr, setAppIcon, sortDays };

@@ -4,6 +4,10 @@ section {
   margin-bottom: 26px;
 }
 
+section:last-of-type {
+  margin-bottom: 0;
+}
+
 .app-title {
   display: flex;
   align-items: center;
@@ -30,7 +34,11 @@ section {
 
 .developer-name {
   font-weight: 600;
-  font-size: 1.05rem;
+  font-size: 1rem;
+}
+
+.developer-name span {
+  font-size: 0.95rem;
 }
 
 .links {
@@ -41,11 +49,15 @@ section {
   font-size: 0.85rem;
 }
 
-.links a {
+a {
   color: #60a5fa;
   text-decoration: none;
 }
 
-.links a:hover {
+a:hover {
   text-decoration: underline;
+}
+
+.footer-text {
+  text-align: center;
 }

@@ -12,8 +12,8 @@ contextBridge.exposeInMainWorld("electronApi", {
     cancelSchedule: (id) => ipcRenderer.invoke("cancel-boot-schedule", id),
     disableSchedule: (id) => ipcRenderer.invoke("disable-boot-schedule", id),
   },
-  toast(message) {
-    return ipcRenderer.invoke("message-dialog", message);
+  toast(message, type) {
+    return ipcRenderer.invoke("message-dialog", message, type);
   },
   onListChange(eventName, cb) {
     ipcRenderer.on(eventName, () => {

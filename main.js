@@ -96,14 +96,29 @@ ipcMain.handle(CONSTANTS.GET_STORE, () => {
   };
 });
 
-ipcMain.handle(CONSTANTS.MESSAGE_DIALOG, (_, message) => {
-  return dialog.showErrorBox("Warning", message);
+ipcMain.handle(CONSTANTS.MESSAGE_DIALOG, (_, message, type) => {
+  if (type === "question") {
+    const response = dialog.showMessageBoxSync(mainWindow, {
+      type: "question",
+      buttons: ["OK", "Cancel"],
+      defaultId: 0,
+      cancelId: 1,
+      title: "Confirm Action",
+      message: message || "Do you want to continue?",
+      detail: "This action cannot be undone.",
+    });
+
+    return response;
+  } else return dialog.showErrorBox("Warning", message);
 });
 
 ipcMain.handle("helpers", (_, keyName, payload) => {
   switch (keyName) {
     case "join-array":
       return joinArr(payload);
+    case "hibernate":
+      handleHibernation();
+      return;
   }
 });
 

@@ -7,12 +7,22 @@
   }
 
   const countdown = document.getElementById("countdown");
-
   const snoozeBtn = document.getElementById("snooze");
   const cancelBtn = document.getElementById("cancel");
   const proceedBtn = document.getElementById("proceed");
+  const messageEl = document.getElementById("message");
 
-  window.notificationApi.onShowNotification(({ schedule }) => {
+  window.notificationApi.onShowNotification(({ schedule, isBoot }) => {
+    const mode = schedule.mode;
+
+    messageEl.innerHTML = `Your system is about to hibernate${
+      isBoot ? " because your allowed boot time has not started yet" : ""
+    }.${
+      mode === "very_strict"
+        ? ""
+        : " Please save your work or choose an action below."
+    }`;
+
     let currentSeconds =
       {
         very_strict: 5,
@@ -49,8 +59,6 @@
       clearInterval(id);
       api.proceed();
     };
-
-    const mode = schedule.mode;
 
     const less = mode === "less_strict";
 

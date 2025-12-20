@@ -4,6 +4,10 @@ section {
   margin-bottom: 28px;
 }
 
+section:last-of-type {
+  margin-bottom: 0;
+}
+
 .note {
   background: #020617;
   border-left: 3px solid #38bdf8;

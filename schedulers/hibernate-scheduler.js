@@ -17,6 +17,10 @@ class HibernateScheduler extends Scheduler {
   add(schedule) {
     const newSchedule = super.add(schedule, CONSTANTS.STORE_HIB_KEY);
     if (newSchedule) this.scheduleJob(newSchedule);
+
+    console.log(newSchedule);
+
+    return newSchedule;
   }
 
   scheduleJob(s) {
