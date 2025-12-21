@@ -6,6 +6,7 @@ const HibernateScheduler = require("./schedulers/hibernate-scheduler");
 const {
   closeHibernateNotification,
   getActiveStoreKey,
+  showHibernateNotification,
 } = require("./windows/notificationWindow");
 const hibernate = require("./hibernate");
 const BootScheduler = require("./schedulers/boot-scheduler");
@@ -152,6 +153,12 @@ ipcMain.handle(CONSTANTS.DISABLE_BOOT_SCHEDULE, (_, id) => {
 
 // NOTIFICATION HANDLERS
 
+const handleReomveActiveSchedule = (storeKey) => {
+  const scheduler = getScheduler(storeKey);
+
+  scheduler.shouldRemoveActiveScheduleFromList(mainWindow, storeKey);
+};
+
 ipcMain.handle("close-notification", (_, filterFromList) => {
   const storeKey = closeHibernateNotification(filterFromList);
 
@@ -164,11 +171,7 @@ ipcMain.handle("close-notification", (_, filterFromList) => {
     return;
   }
 
-  if (filterFromList) {
-    const scheduler = getScheduler(storeKey);
-
-    scheduler.shouldRemoveActiveScheduleFromList(mainWindow, storeKey);
-  }
+  if (filterFromList) handleReomveActiveSchedule(storeKey);
 });
 
 const handleHibernation = () => {
@@ -209,7 +212,16 @@ ipcMain.handle("snooze-hibernation", () => {
     store.set(storeKey, list);
     scheduler.setActiveSchedule({ ...schedule, snoozeCount });
 
-    showHibernateNotification(scheduler.activeSchedule, storeKey);
+    const isBoot = storeKey === CONSTANTS.STORE_BOOT_KEY;
+
+    if (isBoot) {
+      const bool = bootScheduler.scheduleShouldShowNotification(schedule, true);
+
+      if (!bool) {
+        closeHibernateNotification(true);
+        handleReomveActiveSchedule(storeKey);
+      }
+    } else showHibernateNotification(scheduler.activeSchedule, storeKey);
   }, 10_000);
 });
 

@@ -44,7 +44,7 @@
     return {
       hour,
       minute,
-      meridiem: hour24 >= 12 ? "pm" : "am",
+      meridiem: hour24 >= 12 && hour24 < 24 ? "pm" : "am",
     };
   };
 
@@ -252,6 +252,7 @@
     addBtnEl.onclick = () => {
       scheduleFormEl.reset();
       resetTimeValues();
+      customDaysRootEl.style.display = "none";
       modeDescEl.innerHTML = "Your device will be hibernated. Enjoy your time.";
       scheduleFormEl.style.display = "flex";
     };

@@ -30,48 +30,71 @@ class Scheduler {
   }
 
   hasConflict(schedule, storeKey, withEnable = false) {
-    const invalid = [];
-
-    let hasConflict = false,
-      sameTime = false;
-
-    const map = {};
-
-    const list = this.store.get(storeKey, []);
+    let hasConflict = false;
 
     const isBoot = storeKey === CONSTANTS.STORE_BOOT_KEY;
 
-    for (const item of list) {
-      if (item.disable) continue;
+    let timeConflict = false;
 
-      if (!sameTime)
-        sameTime =
-          item.hour === schedule.hour && item.minute === schedule.minute;
+    const withTimeConflict = (schedule, storeKey) => {
+      for (const item of this.store.get(storeKey, [])) {
+        if (item.disable) continue;
 
-      for (let i = 0; i < item.days.length; i++) {
-        const day = item.days[i];
-
-        if (!map[day] && schedule.days.includes(day)) {
-          map[day] = true;
-
-          const dayWord =
-            {
-              0: "Sunday",
-              1: "Monday",
-              2: "Tuesday",
-              3: "Wednesday",
-              4: "Thursday",
-              5: "Friday",
-              6: "Saturday",
-            }[day] || "";
-
-          invalid.push(dayWord);
+        if (item.hour === schedule.hour && item.minute === schedule.minute) {
+          timeConflict = true;
+          break;
         }
       }
-    }
 
-    if (isBoot) hasConflict = !!invalid.length;
-    else hasConflict = sameTime && !!invalid.length;
+      return timeConflict;
+    };
+
+    const list = this.store.get(storeKey, []);
+
+    const invalid = [];
+
+    const withDayConflict = () => {
+      const map = {};
+
+      for (const item of list) {
+        if (item.disable) continue;
+
+        for (let i = 0; i < item.days.length; i++) {
+          const day = item.days[i];
+
+          if (!map[day] && schedule.days.includes(day)) {
+            map[day] = true;
+
+            const dayWord =
+              {
+                0: "Sunday",
+                1: "Monday",
+                2: "Tuesday",
+                3: "Wednesday",
+                4: "Thursday",
+                5: "Friday",
+                6: "Saturday",
+              }[day] || "";
+
+            invalid.push(dayWord);
+          }
+        }
+      }
+
+      return !!invalid.length;
+    };
+
+    if (isBoot) {
+      hasConflict =
+        withTimeConflict(schedule, CONSTANTS.STORE_HIB_KEY) ||
+        withTimeConflict(schedule, CONSTANTS.STORE_BOOT_KEY) ||
+        withDayConflict();
+    } else {
+      hasConflict =
+        withTimeConflict(schedule, CONSTANTS.STORE_BOOT_KEY) ||
+        (withTimeConflict(schedule, CONSTANTS.STORE_HIB_KEY) &&
+          withDayConflict());
+    }
 
     if (hasConflict)
       dialog.showErrorBox(
@@ -79,10 +102,10 @@ class Scheduler {
         `Sorry can't ${
           withEnable ? "enable" : "add"
         } schedule. A schedule is active${
-          isBoot ? "" : " at the specified time"
+          timeConflict ? " at the specified time" : ""
         }${invalid.length ? ` on ${joinArr(sortDays(invalid))}` : ""}.`
       );
-    else if (list.length > 7) {
+    else if (list.length > 10) {
       dialog.showErrorBox("Schedule limit", "Max Schedule Reached.");
       hasConflict = true;
     }
@@ -145,9 +168,7 @@ class Scheduler {
       .get(storeKey, [])
       .find((s) => s.id === schedule.id)?.disable;
 
-    console.log(disable, "shoul noti");
-
-    if (disable) return;
+    if (disable) return false;
 
     const isHib = storeKey === CONSTANTS.STORE_HIB_KEY;
 
@@ -162,6 +183,8 @@ class Scheduler {
 
       if (isHib) this.cancelJob(schedule.id);
     }
+
+    return !!this.activeSchedule;
   }
 
   shouldRemoveActiveScheduleFromList(window, storeKey) {

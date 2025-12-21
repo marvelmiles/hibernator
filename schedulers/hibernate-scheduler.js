@@ -18,13 +18,11 @@ class HibernateScheduler extends Scheduler {
     const newSchedule = super.add(schedule, CONSTANTS.STORE_HIB_KEY);
     if (newSchedule) this.scheduleJob(newSchedule);
 
-    console.log(newSchedule);
-
     return newSchedule;
   }
 
   scheduleJob(s) {
-    const entities = this.schedule(s, async () => {
+    const entities = this.schedule(s, () => {
       this.shouldShowNotification(s, CONSTANTS.STORE_HIB_KEY);
     });
 

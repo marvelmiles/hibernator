@@ -1,4 +1,5 @@
 const CONSTANTS = require("../config/constants");
+const { showHibernateNotification } = require("../windows/notificationWindow");
 const Scheduler = require("./scheduler");
 
 class BootScheduler extends Scheduler {
@@ -11,31 +12,39 @@ class BootScheduler extends Scheduler {
     this.shouldHibernate();
   }
 
-  shouldHibernate() {
-    const list = this.store.get(CONSTANTS.STORE_BOOT_KEY, []);
+  scheduleShouldShowNotification(s, canShow) {
+    if (s.disable) return false;
 
     const todayIndex = new Date().getDay();
 
-    list.forEach((s) => {
-      if (s.disable) return;
+    const dayIndex = s.days.find(
+      (dayIndex) =>
+        dayIndex === todayIndex &&
+        (canShow || !s.completedTask.includes(todayIndex))
+    );
 
-      const dayIndex = s.days.find(
-        (dayIndex) =>
-          dayIndex === todayIndex && !s.completedTask.includes(todayIndex)
-      );
+    if (dayIndex !== undefined) {
+      const allowedTime = new Date();
 
-      if (dayIndex !== null) {
-        const allowedTime = new Date();
+      allowedTime.setHours(s.hour, s.minute, 0, 0);
 
-        allowedTime.setHours(s.hour, s.minute, 0, 0);
+      const now = new Date().getTime();
 
-        const now = new Date().getTime();
-
-        if (now < allowedTime.getTime()) {
-          this.shouldShowNotification(s, CONSTANTS.STORE_BOOT_KEY);
-        }
+      if (now < allowedTime.getTime()) {
+        if (canShow) {
+          showHibernateNotification(s, CONSTANTS.STORE_BOOT_KEY);
+          return true;
+        } else return this.shouldShowNotification(s, CONSTANTS.STORE_BOOT_KEY);
       }
-    });
+    }
+
+    return false;
+  }
+
+  shouldHibernate() {
+    const list = this.store.get(CONSTANTS.STORE_BOOT_KEY, []);
+
+    list.forEach((s) => this.scheduleShouldShowNotification(s));
   }
 }
 
