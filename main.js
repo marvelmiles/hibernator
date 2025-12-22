@@ -46,6 +46,8 @@ const createTray = () => {
 };
 
 const initAutoUpdater = () => {
+  if (!app.isPackaged) return;
+
   autoUpdater.autoDownload = false;
 
   autoUpdater.on("error", (error) => {
@@ -295,7 +297,7 @@ ipcMain.handle("snooze-hibernation", () => {
         handleReomveActiveSchedule(storeKey);
       }
     } else showHibernateNotification(scheduler.activeSchedule, storeKey);
-  }, 10_000);
+  }, 300_000);
 });
 
 /**
