@@ -24,7 +24,10 @@ const showHibernateNotification = (schedule, storeKey) => {
     focusable: true,
     icon: iconPath,
     webPreferences: {
-      preload: path.join(process.cwd(), "preloads/notification.js"),
+      preload: path.join(
+        CONSTANTS.APP_ROOT_DIRECTORY,
+        "preloads/notification.js"
+      ),
       contextIsolation: true,
     },
   });

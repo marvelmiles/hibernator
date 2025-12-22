@@ -1,7 +1,7 @@
 {
   "name": "hibernator",
   "version": "1.0.0",
-  "description": "Cross-platform background app that auto-hibernates devices at scheduled times",
+  "description": "A system utility for scheduling device hibernation and managing when your computer can be used.",
   "main": "main.js",
   "scripts": {
     "start": "nodemon --ext js,css,html --exec electron .",
@@ -16,17 +16,27 @@
   "dependencies": {
     "auto-launch": "^5.0.6",
     "electron-store": "^11.0.2",
+    "electron-updater": "^6.6.2",
     "node-schedule": "^2.1.1",
     "uuid": "^13.0.0"
   },
   "build": {
     "appId": "com.example.hibernator",
     "productName": "Hibernator",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "marvelmiles",
+        "repo": "hibernator"
+      }
+    ],
     "mac": {
-      "icon": "icon.icns"
+      "icon": "icon.icns",
+      "target": "dmg"
     },
     "linux": {
-      "icon": "icon.png"
+      "icon": "icon.png",
+      "target": "AppImage"
     },
     "win": {
       "target": "nsis",

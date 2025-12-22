@@ -31,11 +31,7 @@ const menuTemplate = [
   },
 ];
 
-let initialied = false;
-
-const createMainWindow = (show = false) => {
-  if (initialied) return;
-
+const createMainWindow = () => {
   const menu = Menu.buildFromTemplate(menuTemplate);
   Menu.setApplicationMenu(menu);
 
@@ -46,7 +42,7 @@ const createMainWindow = (show = false) => {
   const winHeight = 560;
 
   const window = new BrowserWindow({
-    show,
+    show: false,
     width: winWidth,
     minWidth: 500,
     height: winHeight,
@@ -65,15 +61,15 @@ const createMainWindow = (show = false) => {
   );
 
   window.on("close", (e) => {
-    e.preventDefault();
-    window.hide();
+    if (!app.isQuiting) {
+      e.preventDefault();
+      window.hide();
+    }
   });
 
   if (!app.isPackaged) {
     window.webContents.openDevTools({ mode: "detach" });
   }
-
-  initialied = true;
 
   return window;
 };

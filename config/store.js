@@ -20,6 +20,7 @@ class AppStore extends Store {
             hour: 17,
           },
         ],
+        [CONSTANTS.APP_INITIAL_GUIDE_OEPENED]: true,
       },
     });
   }

@@ -1,4 +1,5 @@
 const CONSTANTS = require("../config/constants");
+const { isAllowedBootTime } = require("../utils/validators");
 const { showHibernateNotification } = require("../windows/notificationWindow");
 const Scheduler = require("./scheduler");
 
@@ -24,13 +25,9 @@ class BootScheduler extends Scheduler {
     );
 
     if (dayIndex !== undefined) {
-      const allowedTime = new Date();
-
-      allowedTime.setHours(s.hour, s.minute, 0, 0);
-
-      const now = new Date().getTime();
-
-      if (now < allowedTime.getTime()) {
+      if (isAllowedBootTime(s)) {
+        if (!s.repeat) this.markTodayTask(s.id, CONSTANTS.STORE_BOOT_KEY);
+      } else {
         if (canShow) {
           showHibernateNotification(s, CONSTANTS.STORE_BOOT_KEY);
           return true;

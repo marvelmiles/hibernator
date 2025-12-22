@@ -4,6 +4,16 @@ const isScheduleActive = ({ repeat, days, completedTask, disable }) => {
   return completedTask.length < days.length;
 };
 
-const validators = { isScheduleActive };
+const isAllowedBootTime = (s) => {
+  const allowedTime = new Date();
+
+  allowedTime.setHours(s.hour, s.minute, 0, 0);
+
+  const now = new Date().getTime();
+
+  return now >= allowedTime.getTime();
+};
+
+const validators = { isScheduleActive, isAllowedBootTime };
 
 module.exports = validators;

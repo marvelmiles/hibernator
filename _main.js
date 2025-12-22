@@ -1,4 +1,4 @@
-const { app, ipcMain, dialog, Tray, autoUpdater } = require("electron");
+const { app, ipcMain, dialog, Tray } = require("electron");
 
 const AppStore = require("./config/store");
 const CONSTANTS = require("./config/constants");
@@ -43,57 +43,6 @@ const createTray = () => {
     mainWindow.show();
     mainWindow.focus();
   });
-};
-
-const initAutoUpdater = () => {
-  autoUpdater.autoDownload = false;
-
-  autoUpdater.on("error", (error) => {
-    dialog.showMessageBox({
-      type: "error",
-      title: "Update Error",
-      message: "Failed to check for updates.",
-      detail: error == null ? "Unknown error" : error.message,
-    });
-  });
-
-  autoUpdater.on("update-available", async (info) => {
-    const result = await dialog.showMessageBox(mainWindow, {
-      type: "question",
-      buttons: ["Update Now", "Later"],
-      defaultId: 0,
-      cancelId: 1,
-      title: "Update Available",
-      message: `Version ${info.version} is available.`,
-      detail: "Would you like to download and install it now?",
-    });
-
-    if (result.response === 0) {
-      autoUpdater.downloadUpdate();
-    }
-  });
-
-  autoUpdater.on("update-not-available", () => {
-    dialog.showErrorBox("", "NO update available");
-  });
-
-  autoUpdater.on("update-downloaded", async () => {
-    const result = await dialog.showMessageBox(mainWindow, {
-      type: "warning",
-      buttons: ["Restart Now", "Later"],
-      defaultId: 0,
-      cancelId: 1,
-      title: "Update Ready",
-      message: "Update downloaded.",
-      detail: "The app needs to restart to apply the update.",
-    });
-
-    if (result.response === 0) {
-      autoUpdater.quitAndInstall();
-    }
-  });
-
-  autoUpdater.checkForUpdates();
 };
 
 const bootstrap = ({ forceOpen, show }) => {
@@ -151,8 +100,6 @@ app.whenReady().then(() => {
   });
 
   bootstrap({ show: true, forceOpen: true });
-
-  initAutoUpdater();
 });
 
 /**

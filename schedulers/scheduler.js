@@ -3,7 +3,7 @@ const CONSTANTS = require("../config/constants");
 const { v4: uniqId } = require("uuid");
 const { joinArr, sortDays } = require("../utils/helper");
 const { showHibernateNotification } = require("../windows/notificationWindow");
-const { isScheduleActive } = require("../utils/validators");
+const { isScheduleActive, isAllowedBootTime } = require("../utils/validators");
 
 class Scheduler {
   constructor(store) {
@@ -145,10 +145,16 @@ class Scheduler {
 
   markTodayTask(scheduleId, storeKey) {
     const list = this.store.get(storeKey, []).map((sch) => {
+      const now = new Date();
+
       if (sch.id === scheduleId) {
+        const dayIndex = now.getDay();
+
         const updatedSchedule = {
           ...sch,
-          completedTask: sch.completedTask.concat(new Date().getDay()),
+          completedTask: sch.completedTask.includes(dayIndex)
+            ? sch.completedTask
+            : sch.completedTask.concat(dayIndex),
         };
 
         if (this.activeSchedule?.id === updatedSchedule?.id)
@@ -179,7 +185,8 @@ class Scheduler {
     }
 
     if (!schedule.repeat) {
-      this.markTodayTask(schedule.id, storeKey);
+      if (isHib || isAllowedBootTime(schedule))
+        this.markTodayTask(schedule.id, storeKey);
 
       if (isHib) this.cancelJob(schedule.id);
     }

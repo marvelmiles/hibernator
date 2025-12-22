@@ -1,6 +1,7 @@
 const { BrowserWindow, shell } = require("electron");
 const path = require("path");
 const { setAppIcon } = require("../utils/helper");
+const CONSTANTS = require("../config/constants");
 
 const iconPath = setAppIcon();
 
@@ -25,7 +26,7 @@ function createInfoWindow(type) {
 
   win.loadFile(
     path.join(
-      process.cwd(),
+      CONSTANTS.APP_ROOT_DIRECTORY,
       `renderer/${type === "about" ? "about.html" : "help.html"}`
     )
   );
