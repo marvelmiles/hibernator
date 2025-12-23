@@ -1,5 +1,6 @@
 const { app, nativeImage } = require("electron");
 const path = require("path");
+const CONSTANTS = require("../config/constants");
 
 const joinArr = (arr, sep = ", ", lastSep = " and ") => {
   if (arr.length === 0) return "";
@@ -25,7 +26,7 @@ const setAppIcon = () => {
       iconFile = "icon.png";
   }
 
-  const iconPath = path.join(process.cwd(), iconFile);
+  const iconPath = path.join(CONSTANTS.APP_ROOT_DIRECTORY, iconFile);
 
   if (app.dock && process.platform === "darwin") {
     const dockIcon = nativeImage.createFromPath(iconPath);

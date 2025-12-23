@@ -22,14 +22,13 @@ const _runCommand = (cmd, args = []) => {
   });
 };
 
-const hibernateOrShutdown = async () => {
+const hibernate = async (
+  message = "Hibernate and shutdown are not supported on this operating system."
+) => {
   const platform = os.platform();
 
   const onError = () => {
-    dialog.showErrorBox(
-      "Hibernate Error",
-      "Hibernate and Shutdown not supported."
-    );
+    dialog.showErrorBox("Hibernate Error", message);
   };
 
   try {
@@ -57,7 +56,7 @@ const hibernateOrShutdown = async () => {
           'tell app "System Events" to shut down',
         ]);
       } else {
-        onError();
+        onError("Platform not supported.");
       }
     } catch (shutdownErr) {
       onError();
@@ -65,4 +64,4 @@ const hibernateOrShutdown = async () => {
   }
 };
 
-module.exports = hibernateOrShutdown;
+module.exports = hibernate;

@@ -13,7 +13,7 @@
   const messageEl = document.getElementById("message");
 
   window.notificationApi.onShowNotification(({ schedule, isBoot }) => {
-    const mode = schedule.mode;
+    const mode = schedule.mode || "less_strict";
 
     messageEl.innerHTML = `${
       schedule.message
@@ -30,7 +30,7 @@
         very_strict: 5,
         medium_strict: 10,
         less_strict: 15,
-      }[schedule.mode] || 15;
+      }[schedule.mode] || 45;
 
     countdown.innerHTML = `${currentSeconds} seconds remaining...`;
 

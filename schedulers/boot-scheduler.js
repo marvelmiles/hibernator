@@ -8,9 +8,9 @@ class BootScheduler extends Scheduler {
     super(store);
   }
 
-  bootstrap() {
+  bootstrap(window) {
     super.bootstrap(CONSTANTS.STORE_BOOT_KEY);
-    this.shouldHibernate();
+    this.shouldHibernate(window);
   }
 
   scheduleShouldShowNotification(s, canShow) {
@@ -23,6 +23,8 @@ class BootScheduler extends Scheduler {
         dayIndex === todayIndex &&
         (canShow || !s.completedTask.includes(todayIndex))
     );
+
+    console.log(dayIndex, isAllowedBootTime(s), " day index is allowed...");
 
     if (dayIndex !== undefined) {
       if (isAllowedBootTime(s)) {
@@ -38,10 +40,12 @@ class BootScheduler extends Scheduler {
     return false;
   }
 
-  shouldHibernate() {
+  shouldHibernate(window) {
     const list = this.store.get(CONSTANTS.STORE_BOOT_KEY, []);
 
     list.forEach((s) => this.scheduleShouldShowNotification(s));
+
+    window.webContents.send(CONSTANTS.BOOT_LIST_CHANGE);
   }
 }
 

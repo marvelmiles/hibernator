@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "A system utility for scheduling device hibernation and managing when your computer can be used.",
   "main": "main.js",
-  "author": "Marvellous Akinrinmola",
+  "author": "Marvellous Akinrinmola Technologies",
   "scripts": {
     "start": "nodemon --ext js,css,html --exec electron .",
     "pack": "electron-builder --dir",

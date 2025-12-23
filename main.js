@@ -1,4 +1,11 @@
-const { app, ipcMain, dialog, Tray, autoUpdater } = require("electron");
+const {
+  app,
+  ipcMain,
+  dialog,
+  Tray,
+  autoUpdater,
+  powerMonitor,
+} = require("electron");
 
 const AppStore = require("./config/store");
 const CONSTANTS = require("./config/constants");
@@ -15,6 +22,10 @@ const { createMainWindow } = require("./windows/mainWindow");
 const { createInfoWindow } = require("./windows/infoWindow");
 
 app.setAppUserModelId("com.example.hibernator");
+app.setLoginItemSettings({
+  openAtLogin: true,
+  args: ["--autostart"],
+});
 
 const iconPath = setAppIcon();
 
@@ -55,19 +66,19 @@ const initAutoUpdater = () => {
       type: "error",
       title: "Update Error",
       message: "Failed to check for updates.",
-      detail: error == null ? "Unknown error" : error.message,
+      detail: error?.message || "Unknown error",
     });
   });
 
   autoUpdater.on("update-available", async (info) => {
     const result = await dialog.showMessageBox(mainWindow, {
       type: "question",
-      buttons: ["Update Now", "Later"],
+      buttons: ["Download Update", "Later"],
       defaultId: 0,
       cancelId: 1,
       title: "Update Available",
       message: `Version ${info.version} is available.`,
-      detail: "Would you like to download and install it now?",
+      detail: "The update will be installed the next time the app restarts.",
     });
 
     if (result.response === 0) {
@@ -75,39 +86,42 @@ const initAutoUpdater = () => {
     }
   });
 
-  autoUpdater.on("update-not-available", () => {
-    dialog.showErrorBox("", "NO update available");
-  });
-
   autoUpdater.on("update-downloaded", async () => {
-    const result = await dialog.showMessageBox(mainWindow, {
-      type: "warning",
-      buttons: ["Restart Now", "Later"],
-      defaultId: 0,
-      cancelId: 1,
+    await dialog.showMessageBox(mainWindow, {
+      type: "info",
+      buttons: ["OK"],
       title: "Update Ready",
-      message: "Update downloaded.",
-      detail: "The app needs to restart to apply the update.",
+      message: "Update downloaded",
+      detail:
+        "The update will be installed the next time the app is restarted.",
     });
-
-    if (result.response === 0) {
-      autoUpdater.quitAndInstall();
-    }
   });
 
   autoUpdater.checkForUpdates();
 };
 
-const bootstrap = ({ forceOpen, show }) => {
+const handleBackgroundService = () => {
+  if (mainWindow) {
+    bootScheduler.bootstrap(mainWindow);
+    hibernateScheduler.bootstrap(mainWindow);
+  }
+};
+
+const bootstrap = (opt = {}) => {
+  let { show = false } = opt;
+
   const openedAtLogin = app.getLoginItemSettings().wasOpenedAtLogin;
 
-  show = openedAtLogin ? false : show || forceOpen;
+  const isAutoStart = process.argv.includes("--autostart");
 
-  mainWindow = createMainWindow(show);
+  const disableShow = openedAtLogin || isAutoStart || !!mainWindow;
+
+  show = disableShow ? false : show;
+
+  if (!mainWindow) mainWindow = createMainWindow();
+
   createTray();
-
-  bootScheduler.bootstrap();
-  hibernateScheduler.bootstrap();
+  handleBackgroundService();
 
   if (show) {
     mainWindow.show();
@@ -135,9 +149,6 @@ app.on("second-instance", () => {
     if (mainWindow.isMinimized()) mainWindow.restore();
     mainWindow.show();
     mainWindow.focus();
-  } else {
-    // if for some reason app didn't initialize
-    bootstrap({ forceOpen: true });
   }
 });
 
@@ -147,14 +158,17 @@ const getScheduler = (storeKey) => {
 };
 
 app.whenReady().then(() => {
-  app.setLoginItemSettings({
-    openAtLogin: true,
-    openAsHidden: true,
-  });
+  bootstrap({ show: true });
 
-  bootstrap({ show: true, forceOpen: true });
+  // initAutoUpdater();
+});
 
-  initAutoUpdater();
+powerMonitor.on("resume", () => {
+  handleBackgroundService();
+});
+
+powerMonitor.on("unlock-screen", () => {
+  handleBackgroundService();
 });
 
 /**
@@ -307,7 +321,7 @@ ipcMain.handle("snooze-hibernation", () => {
  */
 
 app.on("activate", () => {
-  if (!mainWindow) bootstrap({ forceOpen: true, show: true });
+  if (!mainWindow) bootstrap({ show: true });
 });
 
 app.on("window-all-closed", (e) => {

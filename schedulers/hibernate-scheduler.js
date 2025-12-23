@@ -9,9 +9,11 @@ class HibernateScheduler extends Scheduler {
     this.entities = [];
   }
 
-  bootstrap() {
+  bootstrap(window) {
     this.cancelJobs();
     super.bootstrap(CONSTANTS.STORE_HIB_KEY);
+
+    window.webContents.send(CONSTANTS.HIB_LIST_CHANGE);
   }
 
   add(schedule) {
