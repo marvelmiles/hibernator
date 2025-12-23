@@ -21,16 +21,14 @@
     "node-schedule": "^2.1.1",
     "uuid": "^13.0.0"
   },
+  "repository": "https://github.com/marvelmiles/hibernator",
+  "publish": {
+    "provider": "github",
+    "releaseType": "release"
+  },
   "build": {
     "appId": "com.example.hibernator",
     "productName": "Hibernator",
-    "publish": [
-      {
-        "provider": "github",
-        "owner": "marvelmiles",
-        "repo": "hibernator"
-      }
-    ],
     "mac": {
       "icon": "icon.icns",
       "target": "dmg"

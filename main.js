@@ -1,12 +1,5 @@
-const {
-  app,
-  ipcMain,
-  dialog,
-  Tray,
-  autoUpdater,
-  powerMonitor,
-} = require("electron");
-
+const { app, ipcMain, dialog, Tray, powerMonitor } = require("electron");
+const { autoUpdater } = require("electron-updater");
 const AppStore = require("./config/store");
 const CONSTANTS = require("./config/constants");
 const HibernateScheduler = require("./schedulers/hibernate-scheduler");
@@ -57,9 +50,8 @@ const createTray = () => {
 };
 
 const initAutoUpdater = () => {
-  if (!app.isPackaged) return;
-
   autoUpdater.autoDownload = false;
+  autoUpdater.autoInstallOnAppQuit = true;
 
   autoUpdater.on("error", (error) => {
     dialog.showMessageBox({
@@ -160,7 +152,7 @@ const getScheduler = (storeKey) => {
 app.whenReady().then(() => {
   bootstrap({ show: true });
 
-  // initAutoUpdater();
+  initAutoUpdater();
 });
 
 powerMonitor.on("resume", () => {
