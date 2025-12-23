@@ -15,9 +15,7 @@
   window.notificationApi.onShowNotification(({ schedule, isBoot }) => {
     const mode = schedule.mode || "less_strict";
 
-    messageEl.innerHTML = `${
-      schedule.message
-    } Your system is about to hibernate${
+    messageEl.innerHTML = `Your system is about to hibernate${
       isBoot ? " because your allowed boot time has not started yet" : ""
     }.${
       mode === "very_strict"
