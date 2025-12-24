@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "A system utility that schedules hibernation and manages computer usage so you are not glued to your screen all day. ✅",
   "main": "main.js",
+  "homepage": "https://github.com/marvelmiles/hibernator/releases",
   "author": "Marvellous Akinrinmola Technologies",
   "scripts": {
     "start": "nodemon --ext js,css,html --exec electron .",
@@ -21,7 +22,13 @@
     "node-schedule": "^2.1.1",
     "uuid": "^13.0.0"
   },
-  "repository": "https://github.com/marvelmiles/hibernator",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/marvelmiles/hibernator.git"
+  },
+  "bugs": {
+    "url": "https://github.com/marvelmiles/hibernator/issues"
+  },
   "publish": {
     "provider": "github",
     "releaseType": "release"
