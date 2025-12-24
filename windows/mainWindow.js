@@ -22,12 +22,7 @@ const menuTemplate = [
   },
   {
     label: "Help",
-    submenu: [
-      {
-        label: "How it works",
-        click: () => createInfoWindow("help"),
-      },
-    ],
+    click: () => createInfoWindow("help"),
   },
 ];
 
