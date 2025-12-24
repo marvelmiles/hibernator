@@ -30,7 +30,7 @@ if (!gotTheLock) {
 }
 
 let mainWindow;
-let tray;
+let tray, withUpdate;
 
 const store = new AppStore();
 const hibernateScheduler = new HibernateScheduler(store);
@@ -52,41 +52,51 @@ const createTray = () => {
 const initAutoUpdater = () => {
   autoUpdater.autoDownload = false;
   autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.autoRunAppAfterInstall = true;
 
   autoUpdater.on("error", (error) => {
-    dialog.showMessageBox({
-      type: "error",
-      title: "Update Error",
-      message: "Failed to check for updates.",
-      detail: error?.message || "Unknown error",
-    });
+    if (mainWindow) {
+      dialog.showMessageBox({
+        type: "error",
+        title: "Hibernator Update",
+        message: "Failed to check for updates.",
+        detail: error?.message || "Unknown error",
+      });
+    }
   });
 
   autoUpdater.on("update-available", async (info) => {
-    const result = await dialog.showMessageBox(mainWindow, {
-      type: "question",
-      buttons: ["Download Update", "Later"],
-      defaultId: 0,
-      cancelId: 1,
-      title: "Update Available",
-      message: `Version ${info.version} is available.`,
-      detail: "The update will be installed the next time the app restarts.",
-    });
+    if (mainWindow) {
+      const result = await dialog.showMessageBox(mainWindow, {
+        type: "question",
+        buttons: ["Download", "Later"],
+        defaultId: 0,
+        cancelId: 1,
+        title: "Hibernator Update",
+        message: `Version ${info.version} is available.`,
+      });
 
-    if (result.response === 0) {
-      autoUpdater.downloadUpdate();
+      if (result.response === 0) {
+        autoUpdater.downloadUpdate();
+      }
     }
   });
 
   autoUpdater.on("update-downloaded", async () => {
-    await dialog.showMessageBox(mainWindow, {
+    const result = await dialog.showMessageBox(mainWindow, {
       type: "info",
-      buttons: ["OK"],
-      title: "Update Ready",
+      buttons: ["Restart Now", "Later"],
+      defaultId: 0,
+      cancelId: 1,
+      title: "Hibernator Update",
       message: "Update downloaded",
-      detail:
-        "The update will be installed the next time the app is restarted.",
+      detail: "The app needs to restart to apply the update.",
     });
+
+    if (result.response === 0) {
+      withUpdate = true;
+      autoUpdater.quitAndInstall(true, true);
+    }
   });
 
   autoUpdater.checkForUpdates();
@@ -318,11 +328,13 @@ app.on("activate", () => {
 });
 
 app.on("window-all-closed", (e) => {
-  e.preventDefault();
+  if (!withUpdate) e.preventDefault();
 });
 
 app.on("before-quit", (e) => {
-  e.preventDefault();
+  if (!withUpdate) {
+    e.preventDefault();
 
-  if (mainWindow) mainWindow.hide();
+    if (mainWindow) mainWindow.hide();
+  }
 });

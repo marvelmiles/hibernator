@@ -33,7 +33,7 @@ const menuTemplate = [
 
 let initialied = false;
 
-const createMainWindow = (show = false) => {
+const createMainWindow = (show = false, withUpdate) => {
   if (initialied) return;
 
   const menu = Menu.buildFromTemplate(menuTemplate);
@@ -60,8 +60,10 @@ const createMainWindow = (show = false) => {
   );
 
   window.on("close", (e) => {
-    e.preventDefault();
-    window.hide();
+    if (!withUpdate) {
+      e.preventDefault();
+      window.hide();
+    }
   });
 
   if (!app.isPackaged) {
