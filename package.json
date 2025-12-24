@@ -1,7 +1,7 @@
 {
   "name": "hibernator",
   "version": "1.0.0",
-  "description": "A system utility for scheduling device hibernation and managing when your computer can be used.",
+  "description": "A system utility that schedules hibernation and manages computer usage so you are not glued to your screen all day. ✅",
   "main": "main.js",
   "author": "Marvellous Akinrinmola Technologies",
   "scripts": {
@@ -26,6 +26,19 @@
     "provider": "github",
     "releaseType": "release"
   },
+  "keywords": [
+    "electron",
+    "desktop",
+    "utility",
+    "hibernate",
+    "screen-time",
+    "scheduler",
+    "shutdown",
+    "productivity",
+    "windows",
+    "mac",
+    "linux"
+  ],
   "build": {
     "appId": "com.example.hibernator",
     "productName": "Hibernator",
