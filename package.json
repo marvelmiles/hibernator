@@ -1,6 +1,6 @@
 {
   "name": "hibernator",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A system utility that schedules hibernation and manages computer usage so you are not glued to your screen all day. ✅",
   "main": "main.js",
   "homepage": "https://github.com/marvelmiles/hibernator/releases",
