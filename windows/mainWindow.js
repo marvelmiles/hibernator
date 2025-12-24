@@ -1,5 +1,9 @@
 const { BrowserWindow, app, Menu } = require("electron");
-const { setAppIcon, clampWindowSize } = require("../utils/helper");
+const {
+  setAppIcon,
+  clampWindowSize,
+  withAppUpdate,
+} = require("../utils/helper");
 const path = require("path");
 const { createInfoWindow } = require("./infoWindow");
 const CONSTANTS = require("../config/constants");
@@ -28,7 +32,7 @@ const menuTemplate = [
 
 let initialied = false;
 
-const createMainWindow = (show = false, withUpdate) => {
+const createMainWindow = (store, show = false) => {
   if (initialied) return;
 
   const menu = Menu.buildFromTemplate(menuTemplate);
@@ -55,7 +59,7 @@ const createMainWindow = (show = false, withUpdate) => {
   );
 
   window.on("close", (e) => {
-    if (!withUpdate) {
+    if (!withAppUpdate(store)) {
       e.preventDefault();
       window.hide();
     }

@@ -79,4 +79,14 @@ const clampWindowSize = ({ width, height, parent }) => {
   };
 };
 
-module.exports = { joinArr, setAppIcon, sortDays, clampWindowSize };
+const withAppUpdate = (store) => {
+  return store.get(CONSTANTS.APP_HAS_UPDATE, false);
+};
+
+module.exports = {
+  joinArr,
+  setAppIcon,
+  sortDays,
+  clampWindowSize,
+  withAppUpdate,
+};

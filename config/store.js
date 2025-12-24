@@ -21,6 +21,7 @@ class AppStore extends Store {
           },
         ],
         [CONSTANTS.APP_INITIAL_GUIDE_OEPENED]: true,
+        [CONSTANTS.APP_HAS_UPDATE]: false,
       },
     });
   }

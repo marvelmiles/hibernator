@@ -10,7 +10,7 @@ const {
 } = require("./windows/notificationWindow");
 const hibernate = require("./hibernate");
 const BootScheduler = require("./schedulers/boot-scheduler");
-const { joinArr, setAppIcon } = require("./utils/helper");
+const { joinArr, setAppIcon, withAppUpdate } = require("./utils/helper");
 const { createMainWindow } = require("./windows/mainWindow");
 const { createInfoWindow } = require("./windows/infoWindow");
 
@@ -30,7 +30,7 @@ if (!gotTheLock) {
 }
 
 let mainWindow;
-let tray, withUpdate;
+let tray;
 
 const store = new AppStore();
 const hibernateScheduler = new HibernateScheduler(store);
@@ -49,12 +49,18 @@ const createTray = () => {
   });
 };
 
+const resetAppUpdateState = () => {
+  store.set(CONSTANTS.APP_HAS_UPDATE, false);
+};
+
 const initAutoUpdater = () => {
   autoUpdater.autoDownload = false;
   autoUpdater.autoInstallOnAppQuit = true;
   autoUpdater.autoRunAppAfterInstall = true;
 
   autoUpdater.on("error", (error) => {
+    resetAppUpdateState();
+
     if (mainWindow) {
       dialog.showMessageBox({
         type: "error",
@@ -94,15 +100,19 @@ const initAutoUpdater = () => {
     });
 
     if (result.response === 0) {
-      withUpdate = true;
+      store.set(CONSTANTS.APP_HAS_UPDATE, true);
       autoUpdater.quitAndInstall(true, true);
-    }
+    } else resetAppUpdateState();
   });
+
+  autoUpdater.on("update-not-available", resetAppUpdateState);
 
   autoUpdater.checkForUpdates();
 };
 
 const handleBackgroundService = () => {
+  resetAppUpdateState();
+
   if (mainWindow) {
     bootScheduler.bootstrap(mainWindow);
     hibernateScheduler.bootstrap(mainWindow);
@@ -120,7 +130,7 @@ const bootstrap = (opt = {}) => {
 
   show = disableShow ? false : show;
 
-  if (!mainWindow) mainWindow = createMainWindow();
+  if (!mainWindow) mainWindow = createMainWindow(store);
 
   createTray();
   handleBackgroundService();
@@ -328,11 +338,11 @@ app.on("activate", () => {
 });
 
 app.on("window-all-closed", (e) => {
-  if (!withUpdate) e.preventDefault();
+  if (!withAppUpdate(store)) e.preventDefault();
 });
 
 app.on("before-quit", (e) => {
-  if (!withUpdate) {
+  if (!withAppUpdate(store)) {
     e.preventDefault();
 
     if (mainWindow) mainWindow.hide();
