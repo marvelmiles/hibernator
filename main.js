@@ -122,7 +122,8 @@ const bootstrap = (opt = {}) => {
     const openGuide = store.get(CONSTANTS.OPEN_APP_INITIAL_GUIDE, true);
 
     if (openGuide) {
-      createInfoWindow("help");
+      createInfoWindow("help", mainWindow);
+      createInfoWindow("about", mainWindow);
       store.set(CONSTANTS.OPEN_APP_INITIAL_GUIDE, false);
     }
   }

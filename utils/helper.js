@@ -1,4 +1,4 @@
-const { app, nativeImage } = require("electron");
+const { app, nativeImage, screen } = require("electron");
 const path = require("path");
 const CONSTANTS = require("../config/constants");
 
@@ -53,4 +53,30 @@ const sortDays = (days) => {
   );
 };
 
-module.exports = { joinArr, setAppIcon, sortDays };
+/**
+ * Clamp window size to parent + screen, and optionally watch parent resize.
+ * @param {object} options
+ * @param {number} options.width - Desired width
+ * @param {number} options.height - Desired height
+ * @param {BrowserWindow} [options.parent] - Optional parent window
+ */
+const clampWindowSize = ({ width, height, parent }) => {
+  const display = screen.getPrimaryDisplay();
+  const { width: screenWidth, height: screenHeight } = display.workArea;
+
+  const parentBounds = parent
+    ? parent.getContentBounds()
+    : { width: screenWidth, height: screenHeight };
+
+  const clampedWidth = Math.min(width, parentBounds.width, screenWidth);
+  const clampedHeight = Math.min(height, parentBounds.height, screenHeight);
+
+  return {
+    x: parentBounds.width - clampedWidth,
+    y: 0,
+    width: clampedWidth,
+    height: clampedHeight,
+  };
+};
+
+module.exports = { joinArr, setAppIcon, sortDays, clampWindowSize };

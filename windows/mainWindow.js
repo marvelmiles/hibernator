@@ -1,5 +1,5 @@
-const { screen, BrowserWindow, app, Menu } = require("electron");
-const { setAppIcon } = require("../utils/helper");
+const { BrowserWindow, app, Menu } = require("electron");
+const { setAppIcon, clampWindowSize } = require("../utils/helper");
 const path = require("path");
 const { createInfoWindow } = require("./infoWindow");
 const CONSTANTS = require("../config/constants");
@@ -39,18 +39,13 @@ const createMainWindow = (show = false) => {
   const menu = Menu.buildFromTemplate(menuTemplate);
   Menu.setApplicationMenu(menu);
 
-  const display = screen.getPrimaryDisplay();
-  const { width } = display.workArea;
-
-  const winWidth = 640;
-  const winHeight = 560;
+  const { width, x: screenX } = clampWindowSize({ width: 700 });
 
   const window = new BrowserWindow({
     show,
-    width: winWidth,
+    width,
     minWidth: 500,
-    height: winHeight,
-    x: width - winWidth,
+    x: screenX,
     y: 0,
     icon: iconPath,
     webPreferences: {
