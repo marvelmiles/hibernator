@@ -10,15 +10,6 @@ const CONSTANTS = {
   DISABLE_BOOT_SCHEDULE: "disable-boot-schedule",
   STORE_HIB_KEY: "hibernateSchedules",
   STORE_BOOT_KEY: "bootSchedules",
-  DEFAULT_SCHEDULE_PROPS: {
-    mode: "very_strict",
-    preset: "weekdays",
-    days: [1, 2, 3, 4, 5], // zero-based day index
-    repeat: true,
-    snoozeCount: 0,
-    completedTask: [],
-    disable: false,
-  },
   MESSAGE_DIALOG: "message-dialog",
   HIB_LIST_CHANGE: "hib-list",
   BOOT_LIST_CHANGE: "boot-list",

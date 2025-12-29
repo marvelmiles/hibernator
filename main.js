@@ -58,17 +58,8 @@ const initAutoUpdater = () => {
   autoUpdater.autoInstallOnAppQuit = true;
   autoUpdater.autoRunAppAfterInstall = true;
 
-  autoUpdater.on("error", (error) => {
+  autoUpdater.on("error", () => {
     resetAppUpdateState();
-
-    if (mainWindow) {
-      dialog.showMessageBox({
-        type: "error",
-        title: "Hibernator Update",
-        message: "Failed to check for updates.",
-        detail: error?.message || "Unknown error",
-      });
-    }
   });
 
   autoUpdater.on("update-available", async (info) => {
