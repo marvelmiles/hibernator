@@ -364,7 +364,294 @@
     if (response === 0) api.helpers("hibernate");
   };
 
-  setupDoms("boot");
+  const createScheduleSection = async (sectionName, hasClose = false) => {
+    const label = hasClose ? "close" : "allowed";
 
-  setupDoms("hib");
+    const domType = `${sectionName}_${label}`;
+
+    const getInstalledAppOptions = async () => {
+      const apps = await api.helpers("get-installed-apps");
+
+      return apps
+        .map((a) => `<option value=${a.name}>${a.name}</option>`)
+        .join("");
+    };
+
+    const renderAddon = async () => {
+      switch (sectionName) {
+        case "app":
+          return `
+       <label>
+                App:
+                <select id="${domType}_addon_list">
+                <option value="" selected>Select App</option>
+                ${await getInstalledAppOptions()}
+                </select>
+          </label>
+          <hr />
+      `;
+      }
+    };
+
+    return `
+    <section>
+      <div class="header-row">
+        <h2 class="title">${
+          {
+            app: `${label} Time Schedules`,
+          }[sectionName]
+        }</h2>
+
+        <div class="buttons-row">
+          <button
+            type="button"
+            id="${domType}_add_btn"
+            class="icon-btn btn-primary"
+            title="Add schedule"
+            aria-label="Add schedule"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="18"
+              height="18"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <line x1="9" y1="4" x2="9" y2="14" />
+              <line x1="4" y1="9" x2="14" y2="9" />
+            </svg>
+          </button>
+
+          <button
+            type="button"
+            id="${domType}_stop_all"
+            class="icon-btn btn-danger"
+            title="Stop all schedules"
+            aria-label="Stop all schedules"
+          >
+            ⏹
+          </button>
+        </div>
+      </div>
+
+      <div id="${domType}_content">
+        <form class="schedule-form" id="${domType}_schedule_form">
+      ${await renderAddon()} 
+          <div class="time-row">
+            <label>
+              Hour:
+              <input
+                id="${domType}_hr"
+                type="number"
+                min="1"
+                max="12"
+                value="12"
+              />
+            </label>
+
+            <label>
+              Minute:
+              <input
+                id="${domType}_min"
+                type="number"
+                min="0"
+                max="59"
+                value="1"
+              />
+            </label>
+
+            <select id="${domType}_meridiem">
+              <option value="am" selected>AM</option>
+              <option value="pm">PM</option>
+            </select>
+          </div>
+
+          <hr />
+
+          <div class="days-row">
+            <label>
+              <input
+                type="radio"
+                name="${domType}_days_preset"
+                value="everyday"
+              />
+              Everyday
+            </label>
+
+            <label>
+              <input
+                type="radio"
+                name="${domType}_days_preset"
+                value="weekdays"
+                checked
+                id="${domType}_default_days_preset"
+              />
+              Weekdays
+            </label>
+
+            <label>
+              <input
+                type="radio"
+                name="${domType}_days_preset"
+                value="weekends"
+              />
+              Weekends
+            </label>
+
+            <label>
+              <input
+                type="radio"
+                id="${domType}_days_preset_custom"
+                name="${domType}_days_preset"
+                value="custom"
+              />
+              Custom
+            </label>
+          </div>
+
+          <div
+            class="custom-days"
+            id="${domType}_custom_preset_days"
+            style="display: none"
+          >
+            ${[0, 1, 2, 3, 4, 5, 6]
+              .map(
+                (day) => `
+              <label>
+                <input
+                  type="checkbox"
+                  value="${day}"
+                  name="${domType}_custom_preset_day"
+                />
+                ${["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][day]}
+              </label>
+            `
+              )
+              .join("")}
+          </div>
+
+          <hr />
+
+          <div class="repeat-mode-row">
+            <div>
+              <label>
+                <input
+                  type="checkbox"
+                  id="${domType}_repeat_freq"
+                  checked
+                />
+                Repeat Weekly
+              </label>
+              <hr />
+            </div>
+
+            <div>
+              <label>
+                Mode:
+                <select id="${domType}_schedule_mode">
+                  <option value="less_strict">Flexible</option>
+                  <option value="medium_strict">Moderate</option>
+                  <option value="very_strict" selected>Strict</option>
+                </select>
+              </label>
+
+              <p class="mode-desc" id="${domType}_mode_desc">
+                Your device will be managed. Enjoy your time.
+              </p>
+
+              <hr />
+            </div>
+          </div>
+
+          <div class="buttons-row">
+            <button
+              type="button"
+              id="${domType}_close_add_btn"
+              class="btn-secondary"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="button"
+              id="${domType}_schedule_btn"
+              class="btn-primary"
+            >
+              Schedule
+            </button>
+          </div>
+        </form>
+
+        <hr />
+        <div
+          id="${domType}_schedule_list"
+          class="schedule_list"
+        ></div>
+      </div>
+    </section>
+  `;
+  };
+
+  const tabsContentEl = document.getElementById("tabs-content");
+
+  const tabBtns = document.querySelectorAll(".tab");
+
+  tabsContentEl.innerHTML = [
+    `
+ <div class="tab-content active" id="app-tab-content"> 
+
+ ${[
+   await createScheduleSection("app"),
+   await createScheduleSection("app", true),
+ ].join("")}
+ </div>
+ `,
+    `
+  <div class="tab-content" id="system-tab-content"> 
+ ${[
+   await createScheduleSection("system"),
+   await createScheduleSection("system", true),
+ ].join("")}
+ </div>
+ `,
+    `
+ <div class="tab-content" id="link-tab-content"> 
+ ${[
+   await createScheduleSection("link"),
+   await createScheduleSection("link", true),
+ ].join("")}
+ </div>
+`,
+  ].join("");
+
+  const setupContentDoms = (contentId) => {
+    const [name] = contentId.split("-");
+
+    setupDoms(`${name}_allowed`);
+
+    setupDoms(`${name}_close`);
+  };
+
+  setupContentDoms("app-tab-content");
+
+  tabBtns.forEach((btn) => {
+    btn.onclick = () => {
+      tabBtns.forEach((btn) => btn.classList.remove("active"));
+
+      const activeEl = document.querySelector(".tab-content.active");
+
+      const contentId = btn.dataset.tab;
+
+      const contentEl = document.getElementById(contentId);
+
+      activeEl.classList.remove("active");
+
+      contentEl.classList.add("active");
+
+      setupContentDoms(contentId);
+    };
+  });
 })();

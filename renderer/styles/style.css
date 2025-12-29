@@ -198,3 +198,11 @@ hr {
 .app-icon-header::before {
   content: "💤";
 }
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}

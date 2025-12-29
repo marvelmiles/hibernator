@@ -1,6 +1,9 @@
 const { app, nativeImage, screen } = require("electron");
 const path = require("path");
 const CONSTANTS = require("../config/constants");
+const { exec } = require("child_process");
+const fs = require("fs");
+const os = require("os");
 
 const joinArr = (arr, sep = ", ", lastSep = " and ") => {
   if (arr.length === 0) return "";
@@ -83,10 +86,71 @@ const withAppUpdate = (store) => {
   return store.get(CONSTANTS.APP_HAS_UPDATE, false);
 };
 
+const getWindowsApps = () =>
+  new Promise((resolve, reject) => {
+    exec(
+      'powershell "Get-ItemProperty HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\* | Select-Object DisplayName, DisplayIcon | ConvertTo-Json"',
+      (err, stdout) => {
+        if (err) return reject(err);
+        resolve(
+          JSON.parse(stdout)
+            .filter((app) => app.DisplayName)
+            .map((app) => ({ name: app.DisplayName }))
+        );
+      }
+    );
+  });
+
+const getMacApps = () => {
+  const appsDir = "/Applications";
+  return fs
+    .readdirSync(appsDir)
+    .filter((name) => name.endsWith(".app"))
+    .map((name) => ({
+      name: name.replace(".app", ""),
+      path: path.join(appsDir, name),
+    }));
+};
+
+const getLinuxApps = () => {
+  const dirs = [
+    "/usr/share/applications",
+    `${process.env.HOME}/.local/share/applications`,
+  ];
+
+  const apps = [];
+
+  dirs.forEach((dir) => {
+    if (!fs.existsSync(dir)) return;
+
+    fs.readdirSync(dir)
+      .filter((file) => file.endsWith(".desktop"))
+      .forEach((file) => {
+        apps.push({
+          name: file.replace(".desktop", ""),
+          path: `${dir}/${file}`,
+        });
+      });
+  });
+
+  return apps;
+};
+
+const getInstalledApps = async () => {
+  const platform = os.platform();
+
+  if (platform === "win32") return await getWindowsApps();
+  if (platform === "darwin") return getMacApps();
+  if (platform === "linux") return getLinuxApps();
+
+  return [];
+};
+
 module.exports = {
   joinArr,
   setAppIcon,
   sortDays,
   clampWindowSize,
   withAppUpdate,
+  getInstalledApps,
 };

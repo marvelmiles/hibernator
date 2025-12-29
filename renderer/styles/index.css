@@ -24,6 +24,7 @@ section,
   display: flex;
   align-items: center;
   gap: 6px;
+  text-transform: capitalize;
 }
 
 .title::before {

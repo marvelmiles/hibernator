@@ -10,7 +10,12 @@ const {
 } = require("./windows/notificationWindow");
 const hibernate = require("./hibernate");
 const BootScheduler = require("./schedulers/boot-scheduler");
-const { joinArr, setAppIcon, withAppUpdate } = require("./utils/helper");
+const {
+  joinArr,
+  setAppIcon,
+  withAppUpdate,
+  getInstalledApps,
+} = require("./utils/helper");
 const { createMainWindow } = require("./windows/mainWindow");
 const { createInfoWindow } = require("./windows/infoWindow");
 
@@ -161,7 +166,7 @@ const getScheduler = (storeKey) => {
   else return hibernateScheduler;
 };
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   bootstrap({ show: true });
 
   initAutoUpdater();
@@ -206,12 +211,15 @@ ipcMain.handle(CONSTANTS.MESSAGE_DIALOG, (_, message, type) => {
   } else return dialog.showErrorBox("Warning", message);
 });
 
-ipcMain.handle("helpers", (_, keyName, payload) => {
+ipcMain.handle("helpers", async (_, keyName, payload) => {
   switch (keyName) {
     case "join-array":
       return joinArr(payload);
     case "hibernate":
-      handleHibernation();
+      return handleHibernation();
+    case "get-installed-apps":
+      return await getInstalledApps();
+    default:
       return;
   }
 });
