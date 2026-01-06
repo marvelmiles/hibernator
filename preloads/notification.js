@@ -9,9 +9,9 @@ contextBridge.exposeInMainWorld("notificationApi", {
     closeNotification(false);
     ipcRenderer.invoke("snooze-hibernation");
   },
-  proceed: () => {
+  proceed: (schedulerType, payload) => {
     closeNotification();
-    ipcRenderer.invoke("hibernate");
+    ipcRenderer.invoke("kill-task", schedulerType, payload);
   },
   onShowNotification: (cb) => {
     ipcRenderer.on("show-notification", (_, payload) => {

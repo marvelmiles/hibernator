@@ -34,6 +34,8 @@
       ),
       repeatFreqEl: document.getElementById(`${domType}_repeat_freq`),
       modeDescEl: document.getElementById(`${domType}_mode_desc`),
+      payloadEl: document.getElementById(`${domType}_payload`),
+      activeTabEl: document.querySelector(`.tab.active`),
     };
   };
 
@@ -52,8 +54,8 @@
     return String(value).padStart(size, "0");
   };
 
-  const setupDoms = async (domType) => {
-    const isBoot = domType === "boot";
+  const setupDoms = async (domType, schedulerType) => {
+    const isBoot = domType === `${schedulerType}_allowed`;
 
     const {
       presetsEl,
@@ -70,11 +72,12 @@
       scheduleFormEl,
       closeAddBtnEl,
       modeDescEl,
+      payloadEl,
     } = getDoms(domType);
 
     const getSchedules = async () => {
       const { hibernateSchedules = [], bootSchedules = [] } =
-        await api.getStore();
+        await api.getStore(schedulerType);
 
       return isBoot ? bootSchedules : hibernateSchedules;
     };
@@ -90,6 +93,8 @@
       listEl.innerHTML = "";
 
       schedules.forEach(async (s) => {
+        console.log(s);
+
         if (!s) return;
 
         const card = document.createElement("div");
@@ -170,7 +175,7 @@
         days.className = "days";
 
         s.days.forEach((dayIndex) => {
-          const isActive = !s.disable && !s.completedTask.includes(dayIndex);
+          const isActive = !s.disable && !s.completedTask?.includes(dayIndex);
 
           const span = document.createElement("span");
           span.className = `day ${isActive ? "active" : ""}`;
@@ -269,6 +274,15 @@
 
       const meridiem = meridiemEl.value;
 
+      const payload = payloadEl.value;
+
+      if (schedulerType !== "system" && !payload) {
+        if (schedulerType === "app") {
+          await showDialog("Please select an app");
+          return;
+        }
+      }
+
       if (hour > 12 || hour < 1) {
         await showDialog("Invalid hour value. Should be between 1 - 12.");
         return;
@@ -317,6 +331,7 @@
       const schedule = {
         days,
         preset,
+        payload,
         repeat: repeatFreqEl.checked,
         hour,
         minute,
@@ -325,8 +340,12 @@
 
       let isValid = false;
 
-      if (isBoot) isValid = !!(await api.boot.addSchedule(schedule));
-      else isValid = !!(await api.hibernate.addSchedule(schedule));
+      console.log(isBoot, schedulerType);
+
+      if (isBoot)
+        isValid = !!(await api.boot.addSchedule(schedule, schedulerType));
+      else
+        isValid = !!(await api.hibernate.addSchedule(schedule, schedulerType));
 
       if (!isValid) return;
 
@@ -383,7 +402,7 @@
           return `
        <label>
                 App:
-                <select id="${domType}_addon_list">
+                <select id="${domType}_payload">
                 <option value="" selected>Select App</option>
                 ${await getInstalledAppOptions()}
                 </select>
@@ -630,9 +649,9 @@
   const setupContentDoms = (contentId) => {
     const [name] = contentId.split("-");
 
-    setupDoms(`${name}_allowed`);
+    setupDoms(`${name}_allowed`, name);
 
-    setupDoms(`${name}_close`);
+    setupDoms(`${name}_close`, name);
   };
 
   setupContentDoms("app-tab-content");

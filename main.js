@@ -15,9 +15,12 @@ const {
   setAppIcon,
   withAppUpdate,
   getInstalledApps,
+  createSchedulerStoreKey,
+  parseStoreKey,
 } = require("./utils/helper");
 const { createMainWindow } = require("./windows/mainWindow");
 const { createInfoWindow } = require("./windows/infoWindow");
+const AppScheduler = require("./schedulers/app-scheduler");
 
 app.setAppUserModelId("com.example.hibernator");
 app.setLoginItemSettings({
@@ -40,6 +43,8 @@ let tray;
 const store = new AppStore();
 const hibernateScheduler = new HibernateScheduler(store);
 const bootScheduler = new BootScheduler(store);
+
+const appScheduler = new AppScheduler(store);
 
 const createTray = () => {
   if (tray) return;
@@ -110,6 +115,7 @@ const handleBackgroundService = () => {
   resetAppUpdateState();
 
   if (mainWindow) {
+    appScheduler.bootstrap(mainWindow);
     bootScheduler.bootstrap(mainWindow);
     hibernateScheduler.bootstrap(mainWindow);
   }
@@ -127,6 +133,28 @@ const bootstrap = (opt = {}) => {
   show = disableShow ? false : show;
 
   if (!mainWindow) mainWindow = createMainWindow(store);
+
+  // migrate store for older versions
+
+  const boot = store.get(CONSTANTS.STORE_BOOT_KEY, []);
+
+  const hib = store.get(CONSTANTS.STORE_HIB_KEY, []);
+
+  if (boot.length) {
+    const storeKey = createSchedulerStoreKey(
+      CONSTANTS.STORE_BOOT_KEY,
+      CONSTANTS.SCHEDULER_SYSTEM
+    );
+    store.set(storeKey, boot.concat(store.get(storeKey, [])));
+  }
+
+  if (hib.length) {
+    const storeKey = createSchedulerStoreKey(
+      CONSTANTS.STORE_HIB_KEY,
+      CONSTANTS.SCHEDULER_SYSTEM
+    );
+    store.set(storeKey, hib.concat(store.get(storeKey, [])));
+  }
 
   createTray();
   handleBackgroundService();
@@ -162,8 +190,8 @@ app.on("second-instance", () => {
 });
 
 const getScheduler = (storeKey) => {
-  if (storeKey === CONSTANTS.STORE_BOOT_KEY) return bootScheduler;
-  else return hibernateScheduler;
+  // if (storeKey === CONSTANTS.STORE_BOOT_KEY) return bootScheduler;
+  // else return hibernateScheduler;
 };
 
 app.whenReady().then(async () => {
@@ -188,10 +216,16 @@ powerMonitor.on("unlock-screen", () => {
 
 // CONTEXT HANDLERS
 
-ipcMain.handle(CONSTANTS.GET_STORE, () => {
+ipcMain.handle(CONSTANTS.GET_STORE, (e, type) => {
   return {
-    bootSchedules: store.get("bootSchedules", []),
-    hibernateSchedules: store.get("hibernateSchedules", []),
+    bootSchedules: store.get(
+      createSchedulerStoreKey(CONSTANTS.STORE_BOOT_KEY, type),
+      []
+    ),
+    hibernateSchedules: store.get(
+      createSchedulerStoreKey(CONSTANTS.STORE_HIB_KEY, type),
+      []
+    ),
   };
 });
 
@@ -240,16 +274,28 @@ ipcMain.handle(CONSTANTS.DISABLE_HIB_SCHEDULE, (_, id) => {
 
 // BOOT HANDLERS
 
-ipcMain.handle(CONSTANTS.ADD_BOOT_SCHEDULE, (_, s) => {
-  return bootScheduler.add(s, CONSTANTS.STORE_BOOT_KEY);
+ipcMain.handle(CONSTANTS.ADD_BOOT_SCHEDULE, (_, s, schedulerType) => {
+  const scheduler = getScheduler(
+    createSchedulerStoreKey(CONSTANTS.STORE_BOOT_KEY, schedulerType)
+  );
+
+  scheduler.add(s, CONSTANTS.STORE_BOOT_KEY);
 });
 
-ipcMain.handle(CONSTANTS.CANCEL_BOOT_SCHEDULE, (_, id) => {
-  return bootScheduler.cancelSchedule(id, CONSTANTS.STORE_BOOT_KEY);
+ipcMain.handle(CONSTANTS.CANCEL_BOOT_SCHEDULE, (_, id, schedulerType) => {
+  const scheduler = getScheduler(
+    createSchedulerStoreKey(CONSTANTS.STORE_BOOT_KEY, schedulerType)
+  );
+
+  return scheduler.cancelSchedule(id, CONSTANTS.STORE_BOOT_KEY);
 });
 
-ipcMain.handle(CONSTANTS.DISABLE_BOOT_SCHEDULE, (_, id) => {
-  return bootScheduler.toggleDisableSchedule(id, CONSTANTS.STORE_BOOT_KEY);
+ipcMain.handle(CONSTANTS.DISABLE_BOOT_SCHEDULE, (_, id, schedulerType) => {
+  const scheduler = getScheduler(
+    createSchedulerStoreKey(CONSTANTS.STORE_BOOT_KEY, schedulerType)
+  );
+
+  return scheduler.toggleDisableSchedule(id, CONSTANTS.STORE_BOOT_KEY);
 });
 
 // NOTIFICATION HANDLERS
@@ -258,6 +304,8 @@ const handleReomveActiveSchedule = (storeKey) => {
   const scheduler = getScheduler(storeKey);
 
   scheduler.shouldRemoveActiveScheduleFromList(mainWindow, storeKey);
+
+  scheduler.shiftQueue();
 };
 
 ipcMain.handle("close-notification", (_, filterFromList) => {
@@ -280,8 +328,22 @@ const handleHibernation = () => {
   hibernate();
 };
 
-ipcMain.handle("hibernate", () => {
-  handleHibernation();
+const handleKillTask = (schedulerType, payload) => {
+  switch (schedulerType) {
+    case CONSTANTS.SCHEDULER_SYSTEM:
+      handleHibernation();
+      break;
+    case CONSTANTS.SCHEDULER_APP:
+      closeHibernateNotification(true);
+      appScheduler.killApp(payload);
+      break;
+    default:
+      break;
+  }
+};
+
+ipcMain.handle("kill-task", (e, schedulerType, payload) => {
+  handleKillTask(schedulerType, payload);
 });
 
 ipcMain.handle("snooze-hibernation", () => {
@@ -298,11 +360,13 @@ ipcMain.handle("snooze-hibernation", () => {
 
   const scheduler = getScheduler(storeKey);
 
+  const parsedKey = parseStoreKey(storeKey);
+
   // set active schedule for boot
 
   setTimeout(() => {
     const schedule = scheduler.activeSchedule;
-    if (!schedule) return handleHibernation();
+    if (!schedule) return handleKillTask(parsedKey.schedulerType);
 
     const snoozeCount = schedule.snoozeCount + 1;
 
@@ -313,16 +377,27 @@ ipcMain.handle("snooze-hibernation", () => {
     store.set(storeKey, list);
     scheduler.setActiveSchedule({ ...schedule, snoozeCount });
 
-    const isBoot = storeKey === CONSTANTS.STORE_BOOT_KEY;
+    const bool = scheduler.scheduleShouldShowNotification(
+      schedule,
+      parsedKey.storeKey,
+      true
+    );
 
-    if (isBoot) {
-      const bool = bootScheduler.scheduleShouldShowNotification(schedule, true);
+    if (!bool) {
+      closeHibernateNotification(true);
+      handleReomveActiveSchedule(storeKey);
+    }
 
-      if (!bool) {
-        closeHibernateNotification(true);
-        handleReomveActiveSchedule(storeKey);
-      }
-    } else showHibernateNotification(scheduler.activeSchedule, storeKey);
+    // const isBoot = storeKey === CONSTANTS.STORE_BOOT_KEY;
+
+    // if (isBoot) {
+    //   const bool = bootScheduler.scheduleShouldShowNotification(schedule, true);
+
+    // if (!bool) {
+    //   closeHibernateNotification(true);
+    //   handleReomveActiveSchedule(storeKey);
+    // }
+    // } else showHibernateNotification(scheduler.activeSchedule, storeKey);
   }, 300_000);
 });
 

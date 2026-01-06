@@ -19,6 +19,8 @@
     "auto-launch": "^5.0.6",
     "electron-store": "^11.0.2",
     "electron-updater": "^6.6.2",
+    "get-installed-apps": "^1.1.1",
+    "get-windows": "^9.2.3",
     "node-schedule": "^2.1.1",
     "uuid": "^13.0.0"
   },

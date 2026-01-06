@@ -1,20 +1,37 @@
 const { dialog } = require("electron");
 const CONSTANTS = require("../config/constants");
 const { v4: uniqId } = require("uuid");
-const { joinArr, sortDays } = require("../utils/helper");
+const {
+  joinArr,
+  sortDays,
+  createSchedulerStoreKey,
+} = require("../utils/helper");
 const { showHibernateNotification } = require("../windows/notificationWindow");
 const { isScheduleActive, isAllowedBootTime } = require("../utils/validators");
 
 class Scheduler {
-  constructor(store) {
+  constructor(store, schedulerType) {
     this.store = store;
     this.activeSchedule = null;
+    this.schedulerType = schedulerType;
+    this.queue = [];
+  }
+
+  shiftQueue() {
+    for (const s of [...this.queue]) {
+      if (
+        this.scheduleShouldShowNotification(s, parseStoreKey(storeKey).storeKey)
+      ) {
+        this.queue = this.queue.filter((sch) => sch.id !== s.id);
+        break;
+      }
+    }
   }
 
   bootstrap(storeKey) {
     const isHib = storeKey === CONSTANTS.STORE_HIB_KEY;
 
-    const list = this.store.get(storeKey, []);
+    const list = this.store.get(this.normalizeKey(storeKey), []);
 
     const valid = [];
 
@@ -26,7 +43,7 @@ class Scheduler {
       }
     }
 
-    this.store.set(storeKey, valid);
+    this.store.set(this.normalizeKey(storeKey), valid);
   }
 
   hasConflict(schedule, storeKey, withEnable = false) {
@@ -37,7 +54,7 @@ class Scheduler {
     let timeConflict = false;
 
     const withTimeConflict = (schedule, storeKey) => {
-      for (const item of this.store.get(storeKey, [])) {
+      for (const item of this.store.get(this.normalizeKey(storeKey), [])) {
         if (item.disable) continue;
 
         if (item.hour === schedule.hour && item.minute === schedule.minute) {
@@ -49,7 +66,7 @@ class Scheduler {
       return timeConflict;
     };
 
-    const list = this.store.get(storeKey, []);
+    const list = this.store.get(this.normalizeKey(storeKey), []);
 
     const invalid = [];
 
@@ -115,8 +132,8 @@ class Scheduler {
 
   add(schedule, storeKey) {
     schedule = {
-      ...CONSTANTS.DEFAULT_SCHEDULE_PROPS,
       ...schedule,
+      completedTask: [],
       id: uniqId(),
     };
 
@@ -133,18 +150,25 @@ class Scheduler {
 
   removeFromStore(scheduleId, storeKey) {
     const list = this.store
-      .get(storeKey, [])
+      .get(this.normalizeKey(storeKey), [])
       .filter((s) => s.id !== scheduleId);
 
-    this.store.set(storeKey, list);
+    this.store.set(this.normalizeKey(storeKey), list);
+  }
+
+  normalizeKey(storeKey) {
+    return createSchedulerStoreKey(storeKey, this.schedulerType);
   }
 
   addToStore(schedule, storeKey) {
-    this.store.set(storeKey, [schedule, ...this.store.get(storeKey, [])]);
+    this.store.set(this.normalizeKey(storeKey), [
+      schedule,
+      ...this.store.get(this.normalizeKey(storeKey), []),
+    ]);
   }
 
   markTodayTask(scheduleId, storeKey) {
-    const list = this.store.get(storeKey, []).map((sch) => {
+    const list = this.store.get(this.normalizeKey(storeKey), []).map((sch) => {
       const now = new Date();
 
       if (sch.id === scheduleId) {
@@ -166,12 +190,12 @@ class Scheduler {
       return sch;
     });
 
-    this.store.set(storeKey, list);
+    this.store.set(this.normalizeKey(storeKey), list);
   }
 
   shouldShowNotification(schedule, storeKey) {
     const disable = this.store
-      .get(storeKey, [])
+      .get(this.normalizeKey(storeKey), [])
       .find((s) => s.id === schedule.id)?.disable;
 
     if (disable) return false;
@@ -181,7 +205,11 @@ class Scheduler {
     if (!this.activeSchedule) {
       this.activeSchedule = schedule;
 
-      showHibernateNotification(this.activeSchedule, storeKey);
+      showHibernateNotification(
+        this.activeSchedule,
+        storeKey,
+        this.schedulerType
+      );
     }
 
     if (!schedule.repeat) {
@@ -224,15 +252,17 @@ class Scheduler {
 
     const list = clearAll
       ? []
-      : this.store.get(storeKey, []).filter((s) => s.id !== scheduleId);
+      : this.store
+          .get(this.normalizeKey(storeKey), [])
+          .filter((s) => s.id !== scheduleId);
 
-    this.store.set(storeKey, list);
+    this.store.set(this.normalizeKey(storeKey), list);
 
     return clearAll;
   }
 
   toggleDisableSchedule(scheduleId, storeKey) {
-    const list = this.store.get(storeKey, []).map((s) => {
+    const list = this.store.get(this.normalizeKey(storeKey), []).map((s) => {
       if (s.id === scheduleId) {
         if (s.disable) {
           if (this.hasConflict(s, storeKey, true)) return s;
@@ -255,7 +285,40 @@ class Scheduler {
       } else return s;
     });
 
-    this.store.set(storeKey, list);
+    this.store.set(this.normalizeKey(storeKey), list);
+  }
+
+  shouldHibernate(window, storeKey, opts) {
+    const list = this.store.get(this.normalizeKey(storeKey), []);
+
+    list.forEach((s) => this.scheduleShouldShowNotification(s, opts));
+
+    window.webContents.send(CONSTANTS.BOOT_LIST_CHANGE);
+  }
+
+  scheduleShouldShowNotification(s, storeKey, canShow) {
+    if (s.disable) return false;
+
+    const todayIndex = new Date().getDay();
+
+    const dayIndex = s.days.find(
+      (dayIndex) =>
+        dayIndex === todayIndex &&
+        (canShow || !s.completedTask.includes(todayIndex))
+    );
+
+    if (dayIndex !== undefined) {
+      if (isAllowedBootTime(s)) {
+        if (!s.repeat) this.markTodayTask(s.id, storeKey);
+      } else {
+        if (canShow) {
+          showHibernateNotification(s, storeKey, this.schedulerType);
+          return true;
+        } else return this.shouldShowNotification(s, storeKey);
+      }
+    }
+
+    return false;
   }
 }
 

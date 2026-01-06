@@ -1,6 +1,6 @@
 const { BrowserWindow, shell, app } = require("electron");
 const path = require("path");
-const { setAppIcon } = require("../utils/helper");
+const { setAppIcon, createSchedulerStoreKey } = require("../utils/helper");
 const CONSTANTS = require("../config/constants");
 
 let window = null;
@@ -9,10 +9,10 @@ let activeStoreKey = "";
 
 const iconPath = setAppIcon();
 
-const showHibernateNotification = (schedule, storeKey) => {
+const showHibernateNotification = (schedule, storeKey, schedulerType) => {
   if (window) return;
 
-  activeStoreKey = storeKey;
+  activeStoreKey = createSchedulerStoreKey(storeKey, schedulerType);
 
   window = new BrowserWindow({
     width: 500,
@@ -37,7 +37,7 @@ const showHibernateNotification = (schedule, storeKey) => {
   window.once("ready-to-show", () => {
     window.webContents.send("show-notification", {
       schedule,
-      storeKey,
+      schedulerType,
       isBoot: storeKey === CONSTANTS.STORE_BOOT_KEY,
     });
     shell.beep();
@@ -63,10 +63,10 @@ const closeHibernateNotification = (resetKey) => {
   return key;
 };
 
-const getActiveStoreKey = () => activeStoreKey;
+const getActiveSchedulerKey = () => activeStoreKey;
 
 module.exports = {
   showHibernateNotification,
   closeHibernateNotification,
-  getActiveStoreKey,
+  getActiveSchedulerKey,
 };

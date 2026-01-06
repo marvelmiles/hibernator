@@ -1,9 +1,9 @@
 const { app, nativeImage, screen } = require("electron");
 const path = require("path");
 const CONSTANTS = require("../config/constants");
-const { exec } = require("child_process");
 const fs = require("fs");
 const os = require("os");
+const { getInstalledApps: getDeviceApps } = require("get-installed-apps");
 
 const joinArr = (arr, sep = ", ", lastSep = " and ") => {
   if (arr.length === 0) return "";
@@ -86,32 +86,6 @@ const withAppUpdate = (store) => {
   return store.get(CONSTANTS.APP_HAS_UPDATE, false);
 };
 
-const getWindowsApps = () =>
-  new Promise((resolve, reject) => {
-    exec(
-      'powershell "Get-ItemProperty HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\* | Select-Object DisplayName, DisplayIcon | ConvertTo-Json"',
-      (err, stdout) => {
-        if (err) return reject(err);
-        resolve(
-          JSON.parse(stdout)
-            .filter((app) => app.DisplayName)
-            .map((app) => ({ name: app.DisplayName }))
-        );
-      }
-    );
-  });
-
-const getMacApps = () => {
-  const appsDir = "/Applications";
-  return fs
-    .readdirSync(appsDir)
-    .filter((name) => name.endsWith(".app"))
-    .map((name) => ({
-      name: name.replace(".app", ""),
-      path: path.join(appsDir, name),
-    }));
-};
-
 const getLinuxApps = () => {
   const dirs = [
     "/usr/share/applications",
@@ -139,11 +113,22 @@ const getLinuxApps = () => {
 const getInstalledApps = async () => {
   const platform = os.platform();
 
-  if (platform === "win32") return await getWindowsApps();
-  if (platform === "darwin") return getMacApps();
   if (platform === "linux") return getLinuxApps();
 
-  return [];
+  const apps = await getDeviceApps();
+
+  return apps.map((app) => ({ name: app.appName }));
+};
+
+const createSchedulerStoreKey = (storeKey, schedulerType) => {
+  // account for older versions
+  return schedulerType ? schedulerType + "_" + storeKey : storeKey;
+};
+
+const parseStoreKey = (storeKey) => {
+  const [schedulerType, key] = storeKey.split("_");
+
+  return { schedulerType, storeKey: key };
 };
 
 module.exports = {
@@ -153,4 +138,6 @@ module.exports = {
   clampWindowSize,
   withAppUpdate,
   getInstalledApps,
+  createSchedulerStoreKey,
+  parseStoreKey,
 };
