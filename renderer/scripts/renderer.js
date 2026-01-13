@@ -7,7 +7,7 @@
   }
 
   const showDialog = async (message, type) => {
-    return await api.toast(message, type);
+    return await api.dialog(message, type);
   };
 
   /**
@@ -84,6 +84,8 @@
     const getSchedules = async () => {
       const { hibernateSchedules = [], bootSchedules = [] } =
         await api.getStore(schedulerType);
+
+      console.log(isBoot ? bootSchedules : hibernateSchedules);
 
       return isBoot ? bootSchedules : hibernateSchedules;
     };
@@ -208,8 +210,9 @@
         };
 
         toggleInput.onclick = async () => {
-          if (isBoot) api.boot.disableSchedule(schedulerType, s.id);
-          else api.hibernate.disableSchedule(schedulerType, s.id);
+          if (isBoot) api.boot.toggleDisableSchedule(schedulerType, s.id);
+          else api.hibernate.toggleDisableSchedule(schedulerType, s.id);
+
           await renderList();
         };
 

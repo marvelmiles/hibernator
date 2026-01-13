@@ -133,6 +133,7 @@ class Scheduler {
 
   add(schedule, storeKey) {
     schedule = {
+      disable: false,
       ...schedule,
       completedTask: [],
       id: uniqId(),

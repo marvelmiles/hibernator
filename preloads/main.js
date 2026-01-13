@@ -3,20 +3,20 @@ const { contextBridge, ipcRenderer } = require("electron");
 contextBridge.exposeInMainWorld("electronApi", {
   getStore: (type) => ipcRenderer.invoke("get-store", type),
   hibernate: {
-    addSchedule: (type, s) => ipcRenderer.invoke("add-hib-schedule", s, type),
+    addSchedule: (type, s) => ipcRenderer.invoke("add-hib-schedule", type, s),
     cancelSchedule: (type, id) =>
       ipcRenderer.invoke("cancel-hib-schedule", type, id),
-    disableSchedule: (type, id) =>
-      ipcRenderer.invoke("disable-hib-schedule", id, type),
+    toggleDisableSchedule: (type, id) =>
+      ipcRenderer.invoke("disable-hib-schedule", type, id),
   },
   boot: {
-    addSchedule: (type, s) => ipcRenderer.invoke("add-boot-schedule", s, type),
+    addSchedule: (type, s) => ipcRenderer.invoke("add-boot-schedule", type, s),
     cancelSchedule: (type, id) =>
-      ipcRenderer.invoke("cancel-boot-schedule", id, type),
-    disableSchedule: (type, id) =>
-      ipcRenderer.invoke("disable-boot-schedule", id, type),
+      ipcRenderer.invoke("cancel-boot-schedule", type, id),
+    toggleDisableSchedule: (type, id) =>
+      ipcRenderer.invoke("disable-boot-schedule", type, id),
   },
-  toast(message, type) {
+  dialog(message, type) {
     return ipcRenderer.invoke("message-dialog", message, type);
   },
   onListChange(eventName, cb) {
