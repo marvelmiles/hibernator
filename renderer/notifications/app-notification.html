@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>App notification Warning</title>
+    <link rel="stylesheet" href="../styles/notification.css" />
+  </head>
+
+  <body>
+    <div class="app-header">
+      <div class="header">App will close</div>
+
+      <div class="message" id="message"></div>
+    </div>
+
+    <div id="countdown" class="countdown"></div>
+
+    <div class="actions">
+      <button id="snooze" class="btn-secondary" style="display: none">
+        Snooze
+      </button>
+      <button id="cancel" class="btn-secondary" style="display: none">
+        Cancel
+      </button>
+      <button id="proceed" class="btn-danger">Close App</button>
+    </div>
+
+    <script src="../scripts/notification.js"></script>
+  </body>
+</html>

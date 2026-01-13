@@ -189,9 +189,20 @@ app.on("second-instance", () => {
   }
 });
 
+/**
+ *
+ * @param {string} storeKey - store key in full format [SCHEDULER_TYPE + "_" + STORE_KEY]
+ */
+
 const getScheduler = (storeKey) => {
-  // if (storeKey === CONSTANTS.STORE_BOOT_KEY) return bootScheduler;
-  // else return hibernateScheduler;
+  const type = parseStoreKey(storeKey).schedulerType;
+
+  switch (type) {
+    case CONSTANTS.SCHEDULER_APP:
+      return appScheduler;
+    default:
+      return hibernateScheduler;
+  }
 };
 
 app.whenReady().then(async () => {
@@ -274,26 +285,20 @@ ipcMain.handle(CONSTANTS.DISABLE_HIB_SCHEDULE, (_, id) => {
 
 // BOOT HANDLERS
 
-ipcMain.handle(CONSTANTS.ADD_BOOT_SCHEDULE, (_, s, schedulerType) => {
-  const scheduler = getScheduler(
-    createSchedulerStoreKey(CONSTANTS.STORE_BOOT_KEY, schedulerType)
-  );
+ipcMain.handle(CONSTANTS.ADD_BOOT_SCHEDULE, (_, schedulerType, s) => {
+  const scheduler = getScheduler(schedulerType);
 
-  scheduler.add(s, CONSTANTS.STORE_BOOT_KEY);
+  return scheduler.add(s, CONSTANTS.STORE_BOOT_KEY);
 });
 
-ipcMain.handle(CONSTANTS.CANCEL_BOOT_SCHEDULE, (_, id, schedulerType) => {
-  const scheduler = getScheduler(
-    createSchedulerStoreKey(CONSTANTS.STORE_BOOT_KEY, schedulerType)
-  );
+ipcMain.handle(CONSTANTS.CANCEL_BOOT_SCHEDULE, (_, schedulerType, id) => {
+  const scheduler = getScheduler(schedulerType);
 
   return scheduler.cancelSchedule(id, CONSTANTS.STORE_BOOT_KEY);
 });
 
-ipcMain.handle(CONSTANTS.DISABLE_BOOT_SCHEDULE, (_, id, schedulerType) => {
-  const scheduler = getScheduler(
-    createSchedulerStoreKey(CONSTANTS.STORE_BOOT_KEY, schedulerType)
-  );
+ipcMain.handle(CONSTANTS.DISABLE_BOOT_SCHEDULE, (_, schedulerType, id) => {
+  const scheduler = getScheduler(schedulerType);
 
   return scheduler.toggleDisableSchedule(id, CONSTANTS.STORE_BOOT_KEY);
 });
@@ -305,7 +310,7 @@ const handleReomveActiveSchedule = (storeKey) => {
 
   scheduler.shouldRemoveActiveScheduleFromList(mainWindow, storeKey);
 
-  scheduler.shiftQueue();
+  scheduler.shiftQueue(storeKey);
 };
 
 ipcMain.handle("close-notification", (_, filterFromList) => {
@@ -335,7 +340,7 @@ const handleKillTask = (schedulerType, payload) => {
       break;
     case CONSTANTS.SCHEDULER_APP:
       closeHibernateNotification(true);
-      appScheduler.killApp(payload);
+      appScheduler.killApp(payload).catch(() => {});
       break;
     default:
       break;

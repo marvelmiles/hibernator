@@ -86,6 +86,15 @@ const withAppUpdate = (store) => {
   return store.get(CONSTANTS.APP_HAS_UPDATE, false);
 };
 
+const sortAlphabetically = (arr, key) => {
+  return [...arr].sort((a, b) => {
+    const aValue = key ? a[key] : a;
+    const bValue = key ? b[key] : b;
+
+    return aValue.localeCompare(bValue, undefined, { sensitivity: "base" });
+  });
+};
+
 const getLinuxApps = () => {
   const dirs = [
     "/usr/share/applications",
@@ -117,12 +126,16 @@ const getInstalledApps = async () => {
 
   const apps = await getDeviceApps();
 
-  return apps.map((app) => ({ name: app.appName }));
+  return sortAlphabetically(
+    apps.map((app) => ({ name: app.appName })),
+    "name"
+  );
 };
 
 const createSchedulerStoreKey = (storeKey, schedulerType) => {
-  // account for older versions
-  return schedulerType ? schedulerType + "_" + storeKey : storeKey;
+  if (storeKey.indexOf("_") > -1) return storeKey;
+
+  return schedulerType + "_" + storeKey;
 };
 
 const parseStoreKey = (storeKey) => {
@@ -140,4 +153,5 @@ module.exports = {
   getInstalledApps,
   createSchedulerStoreKey,
   parseStoreKey,
+  sortAlphabetically,
 };

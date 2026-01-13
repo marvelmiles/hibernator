@@ -32,7 +32,9 @@ const showHibernateNotification = (schedule, storeKey, schedulerType) => {
     },
   });
 
-  window.loadFile("./renderer/notification.html");
+  window.loadFile(
+    `./renderer/notifications/${schedulerType}-notification.html`
+  );
 
   window.once("ready-to-show", () => {
     window.webContents.send("show-notification", {

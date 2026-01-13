@@ -3,17 +3,17 @@ const { contextBridge, ipcRenderer } = require("electron");
 contextBridge.exposeInMainWorld("electronApi", {
   getStore: (type) => ipcRenderer.invoke("get-store", type),
   hibernate: {
-    addSchedule: (s, type) => ipcRenderer.invoke("add-hib-schedule", s, type),
-    cancelSchedule: (id, type) =>
-      ipcRenderer.invoke("cancel-hib-schedule", id, type),
-    disableSchedule: (id, type) =>
+    addSchedule: (type, s) => ipcRenderer.invoke("add-hib-schedule", s, type),
+    cancelSchedule: (type, id) =>
+      ipcRenderer.invoke("cancel-hib-schedule", type, id),
+    disableSchedule: (type, id) =>
       ipcRenderer.invoke("disable-hib-schedule", id, type),
   },
   boot: {
-    addSchedule: (s, type) => ipcRenderer.invoke("add-boot-schedule", s, type),
-    cancelSchedule: (id, type) =>
+    addSchedule: (type, s) => ipcRenderer.invoke("add-boot-schedule", s, type),
+    cancelSchedule: (type, id) =>
       ipcRenderer.invoke("cancel-boot-schedule", id, type),
-    disableSchedule: (id, type) =>
+    disableSchedule: (type, id) =>
       ipcRenderer.invoke("disable-boot-schedule", id, type),
   },
   toast(message, type) {

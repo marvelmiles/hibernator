@@ -5,6 +5,7 @@ const {
   joinArr,
   sortDays,
   createSchedulerStoreKey,
+  parseStoreKey,
 } = require("../utils/helper");
 const { showHibernateNotification } = require("../windows/notificationWindow");
 const { isScheduleActive, isAllowedBootTime } = require("../utils/validators");
@@ -17,7 +18,7 @@ class Scheduler {
     this.queue = [];
   }
 
-  shiftQueue() {
+  shiftQueue(storeKey) {
     for (const s of [...this.queue]) {
       if (
         this.scheduleShouldShowNotification(s, parseStoreKey(storeKey).storeKey)
@@ -144,6 +145,11 @@ class Scheduler {
     return schedule;
   }
 
+  addToQueue(schedule) {
+    if (!this.queue.find((s) => s.id === schedule.id))
+      this.queue.push(schedule);
+  }
+
   setActiveSchedule(schedule) {
     this.activeSchedule = schedule;
   }
@@ -222,7 +228,9 @@ class Scheduler {
     return !!this.activeSchedule;
   }
 
-  shouldRemoveActiveScheduleFromList(window, storeKey) {
+  shouldRemoveActiveScheduleFromList(window, schStoreKey) {
+    const { storeKey, schedulerType } = parseStoreKey(schStoreKey);
+
     if (this.activeSchedule) {
       if (!this.activeSchedule.repeat) {
         if (
@@ -235,12 +243,7 @@ class Scheduler {
       this.activeSchedule = null;
     }
 
-    if (window)
-      window.webContents.send(
-        storeKey === CONSTANTS.STORE_BOOT_KEY
-          ? CONSTANTS.BOOT_LIST_CHANGE
-          : CONSTANTS.HIB_LIST_CHANGE
-      );
+    if (window) window.webContents.send(`${schedulerType}-list`);
   }
 
   cancelSchedule(scheduleId, storeKey) {

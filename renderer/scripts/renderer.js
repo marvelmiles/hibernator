@@ -54,6 +54,12 @@
     return String(value).padStart(size, "0");
   };
 
+  const SPACE_REPLACE_VALUE = "__##__";
+
+  const encodeSpaceValue = (text) => text.replaceAll(" ", SPACE_REPLACE_VALUE);
+
+  const decodeSpaceValue = (text) => text.replaceAll(SPACE_REPLACE_VALUE, " ");
+
   const setupDoms = async (domType, schedulerType) => {
     const isBoot = domType === `${schedulerType}_allowed`;
 
@@ -93,8 +99,6 @@
       listEl.innerHTML = "";
 
       schedules.forEach(async (s) => {
-        console.log(s);
-
         if (!s) return;
 
         const card = document.createElement("div");
@@ -196,16 +200,16 @@
           );
 
           if (response === 0) {
-            if (isBoot) await api.boot.cancelSchedule(s.id);
-            else await api.hibernate.cancelSchedule(s.id);
+            if (isBoot) await api.boot.cancelSchedule(schedulerType, s.id);
+            else await api.hibernate.cancelSchedule(schedulerType, s.id);
 
             await renderList();
           }
         };
 
         toggleInput.onclick = async () => {
-          if (isBoot) api.boot.disableSchedule(s.id);
-          else api.hibernate.disableSchedule(s.id);
+          if (isBoot) api.boot.disableSchedule(schedulerType, s.id);
+          else api.hibernate.disableSchedule(schedulerType, s.id);
           await renderList();
         };
 
@@ -274,7 +278,7 @@
 
       const meridiem = meridiemEl.value;
 
-      const payload = payloadEl.value;
+      const payload = decodeSpaceValue(payloadEl.value);
 
       if (schedulerType !== "system" && !payload) {
         if (schedulerType === "app") {
@@ -340,12 +344,10 @@
 
       let isValid = false;
 
-      console.log(isBoot, schedulerType);
-
       if (isBoot)
-        isValid = !!(await api.boot.addSchedule(schedule, schedulerType));
+        isValid = !!(await api.boot.addSchedule(schedulerType, schedule));
       else
-        isValid = !!(await api.hibernate.addSchedule(schedule, schedulerType));
+        isValid = !!(await api.hibernate.addSchedule(schedulerType, schedule));
 
       if (!isValid) return;
 
@@ -361,8 +363,8 @@
       );
 
       if (response === 0) {
-        if (isBoot) await api.boot.cancelSchedule();
-        else await api.hibernate.cancelSchedule();
+        if (isBoot) await api.boot.cancelSchedule(schedulerType);
+        else await api.hibernate.cancelSchedule(schedulerType);
 
         await renderList();
       }
@@ -370,7 +372,7 @@
 
     await renderList();
 
-    api.onListChange(`${domType}-list`, async () => {
+    api.onListChange(`${schedulerType}-list`, async () => {
       await renderList();
     });
   };
@@ -392,7 +394,10 @@
       const apps = await api.helpers("get-installed-apps");
 
       return apps
-        .map((a) => `<option value=${a.name}>${a.name}</option>`)
+        .map(
+          (a, i) =>
+            `<option value=${encodeSpaceValue(a.name)}>${a.name}</option>`
+        )
         .join("");
     };
 
