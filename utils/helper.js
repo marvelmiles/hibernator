@@ -144,6 +144,17 @@ const parseStoreKey = (storeKey) => {
   return { schedulerType, storeKey: key };
 };
 
+const capitalizeWords = (value = "") => {
+  if (typeof value !== "string") return value;
+
+  return value
+    .toLowerCase()
+    .split(" ")
+    .filter(Boolean)
+    .map((word) => word[0].toUpperCase() + word.slice(1))
+    .join(" ");
+};
+
 module.exports = {
   joinArr,
   setAppIcon,
@@ -154,4 +165,5 @@ module.exports = {
   createSchedulerStoreKey,
   parseStoreKey,
   sortAlphabetically,
+  capitalizeWords,
 };

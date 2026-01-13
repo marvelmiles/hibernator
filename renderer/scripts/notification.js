@@ -6,6 +6,8 @@
     return;
   }
 
+  const CONSTANTS = await api.helpers("get-constants");
+
   const countdown = document.getElementById("countdown");
   const snoozeBtn = document.getElementById("snooze");
   const cancelBtn = document.getElementById("cancel");
@@ -13,12 +15,32 @@
   const messageEl = document.getElementById("message");
 
   window.notificationApi.onShowNotification(
-    ({ schedule, isBoot, schedulerType }) => {
+    async ({ schedule, storeKey, schedulerType }) => {
+      const isBoot = storeKey === CONSTANTS.STORE_BOOT_KEY;
+
       const mode = schedule.mode || "less_strict";
 
-      messageEl.innerHTML = `Your system is about to hibernate${
-        isBoot ? " because your allowed boot time has not started yet" : ""
-      }.${
+      let text;
+
+      switch (schedulerType) {
+        case CONSTANTS.SCHEDULER_APP:
+          text = `${await api.helpers(
+            "capitalize",
+            schedule.payload
+          )} is about to be closed${
+            isBoot
+              ? " because it is being used before your allowed usage time"
+              : ""
+          }`;
+          break;
+        case CONSTANTS.SCHEDULER_SYSTEM:
+          text = `Your system is about to hibernate${
+            isBoot ? " because your allowed boot time has not started yet" : ""
+          }`;
+          break;
+      }
+
+      messageEl.innerHTML = `${text}.${
         mode === "very_strict"
           ? ""
           : " Please save your work or choose an action below."
@@ -48,12 +70,12 @@
 
       cancelBtn.onclick = () => {
         clearInterval(id);
-        api.closeNotification();
+        api.closeNotification(schedulerType);
       };
 
       snoozeBtn.onclick = () => {
         clearInterval(id);
-        api.snooze();
+        api.snooze(schedulerType, storeKey);
       };
 
       proceedBtn.onclick = () => {

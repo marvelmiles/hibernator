@@ -17,6 +17,7 @@ const {
   getInstalledApps,
   createSchedulerStoreKey,
   parseStoreKey,
+  capitalizeWords,
 } = require("./utils/helper");
 const { createMainWindow } = require("./windows/mainWindow");
 const { createInfoWindow } = require("./windows/infoWindow");
@@ -191,11 +192,11 @@ app.on("second-instance", () => {
 
 /**
  *
- * @param {string} storeKey - store key in full format [SCHEDULER_TYPE + "_" + STORE_KEY]
+ * @param {string} key - schduleType or store key in full format [SCHEDULER_TYPE + "_" + STORE_KEY]
  */
 
-const getScheduler = (storeKey) => {
-  const type = parseStoreKey(storeKey).schedulerType;
+const getScheduler = (key) => {
+  const type = parseStoreKey(key).schedulerType;
 
   switch (type) {
     case CONSTANTS.SCHEDULER_APP:
@@ -209,6 +210,8 @@ app.whenReady().then(async () => {
   bootstrap({ show: true });
 
   initAutoUpdater();
+
+  // showHibernateNotification({}, CONSTANTS.STORE_BOOT_KEY, "app");
 });
 
 powerMonitor.on("resume", () => {
@@ -226,19 +229,6 @@ powerMonitor.on("unlock-screen", () => {
  */
 
 // CONTEXT HANDLERS
-
-ipcMain.handle(CONSTANTS.GET_STORE, (e, type) => {
-  return {
-    bootSchedules: store.get(
-      createSchedulerStoreKey(CONSTANTS.STORE_BOOT_KEY, type),
-      []
-    ),
-    hibernateSchedules: store.get(
-      createSchedulerStoreKey(CONSTANTS.STORE_HIB_KEY, type),
-      []
-    ),
-  };
-});
 
 ipcMain.handle(CONSTANTS.MESSAGE_DIALOG, (_, message, type) => {
   if (type === "question") {
@@ -264,6 +254,21 @@ ipcMain.handle("helpers", async (_, keyName, payload) => {
       return handleHibernation();
     case "get-installed-apps":
       return await getInstalledApps();
+    case "get-store":
+      return {
+        bootSchedules: store.get(
+          createSchedulerStoreKey(CONSTANTS.STORE_BOOT_KEY, payload),
+          []
+        ),
+        hibernateSchedules: store.get(
+          createSchedulerStoreKey(CONSTANTS.STORE_HIB_KEY, payload),
+          []
+        ),
+      };
+    case "get-constants":
+      return CONSTANTS;
+    case "capitalize":
+      return capitalizeWords(payload);
     default:
       return;
   }
@@ -271,16 +276,22 @@ ipcMain.handle("helpers", async (_, keyName, payload) => {
 
 // HIBERNATE HANDLERS
 
-ipcMain.handle(CONSTANTS.ADD_HIB_SCHEDULE, (_, s) => {
-  return hibernateScheduler.add(s);
+ipcMain.handle(CONSTANTS.ADD_HIB_SCHEDULE, (_, schedulerType, s) => {
+  const scheduler = getScheduler(schedulerType);
+
+  return scheduler.createScheduleJob(s);
 });
 
-ipcMain.handle(CONSTANTS.CANCEL_HIB_SCHEDULE, (_, id) => {
-  return hibernateScheduler.cancelSchedule(id);
+ipcMain.handle(CONSTANTS.CANCEL_HIB_SCHEDULE, (_, schedulerType, id) => {
+  const scheduler = getScheduler(schedulerType);
+
+  return scheduler.cancelSchedule(id);
 });
 
-ipcMain.handle(CONSTANTS.DISABLE_HIB_SCHEDULE, (_, id) => {
-  return hibernateScheduler.toggleDisableSchedule(id, CONSTANTS.STORE_HIB_KEY);
+ipcMain.handle(CONSTANTS.DISABLE_HIB_SCHEDULE, (_, schedulerType, id) => {
+  const scheduler = getScheduler(schedulerType);
+
+  return scheduler.toggleDisableSchedule(id, CONSTANTS.STORE_HIB_KEY);
 });
 
 // BOOT HANDLERS
@@ -305,15 +316,15 @@ ipcMain.handle(CONSTANTS.DISABLE_BOOT_SCHEDULE, (_, schedulerType, id) => {
 
 // NOTIFICATION HANDLERS
 
-const handleReomveActiveSchedule = (storeKey) => {
-  const scheduler = getScheduler(storeKey);
+const handleReomveActiveSchedule = (schStoreKey) => {
+  const scheduler = getScheduler(schStoreKey);
 
-  scheduler.shouldRemoveActiveScheduleFromList(mainWindow, storeKey);
+  scheduler.shouldRemoveActiveScheduleFromList(mainWindow, schStoreKey);
 
-  scheduler.shiftQueue(storeKey);
+  scheduler.shiftQueue(schStoreKey);
 };
 
-ipcMain.handle("close-notification", (_, filterFromList) => {
+ipcMain.handle("close-notification", (_, scheduleType, filterFromList) => {
   const storeKey = closeHibernateNotification(filterFromList);
 
   if (!storeKey) {
@@ -351,46 +362,34 @@ ipcMain.handle("kill-task", (e, schedulerType, payload) => {
   handleKillTask(schedulerType, payload);
 });
 
-ipcMain.handle("snooze-hibernation", () => {
-  const storeKey = getActiveStoreKey();
+ipcMain.handle("snooze-hibernation", (e, schedulerType, storeKey) => {
+  const schStoreKey = createSchedulerStoreKey(storeKey, schedulerType);
 
-  if (!storeKey) {
-    dialog.showErrorBox(
-      "Application Error",
-      "Encountered error while snoozing."
-    );
-
-    return;
-  }
-
-  const scheduler = getScheduler(storeKey);
-
-  const parsedKey = parseStoreKey(storeKey);
-
-  // set active schedule for boot
+  const scheduler = getScheduler(schedulerType);
 
   setTimeout(() => {
     const schedule = scheduler.activeSchedule;
-    if (!schedule) return handleKillTask(parsedKey.schedulerType);
+
+    if (!schedule) return handleKillTask(schedulerType);
 
     const snoozeCount = schedule.snoozeCount + 1;
 
     const list = store
-      .get(storeKey, [])
+      .get(schStoreKey, [])
       .map((s) => (s.id === schedule.id ? { ...s, snoozeCount } : s));
 
-    store.set(storeKey, list);
+    store.set(schStoreKey, list);
     scheduler.setActiveSchedule({ ...schedule, snoozeCount });
 
     const bool = scheduler.scheduleShouldShowNotification(
       schedule,
-      parsedKey.storeKey,
+      storeKey,
       true
     );
 
     if (!bool) {
       closeHibernateNotification(true);
-      handleReomveActiveSchedule(storeKey);
+      handleReomveActiveSchedule(schStoreKey);
     }
 
     // const isBoot = storeKey === CONSTANTS.STORE_BOOT_KEY;
@@ -403,7 +402,7 @@ ipcMain.handle("snooze-hibernation", () => {
     //   handleReomveActiveSchedule(storeKey);
     // }
     // } else showHibernateNotification(scheduler.activeSchedule, storeKey);
-  }, 300_000);
+  }, 10000); // 300_000
 });
 
 /**

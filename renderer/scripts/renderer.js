@@ -82,10 +82,10 @@
     } = getDoms(domType);
 
     const getSchedules = async () => {
-      const { hibernateSchedules = [], bootSchedules = [] } =
-        await api.getStore(schedulerType);
-
-      console.log(isBoot ? bootSchedules : hibernateSchedules);
+      const { hibernateSchedules = [], bootSchedules = [] } = await api.helpers(
+        "get-store",
+        schedulerType
+      );
 
       return isBoot ? bootSchedules : hibernateSchedules;
     };

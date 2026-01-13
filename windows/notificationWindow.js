@@ -40,12 +40,12 @@ const showHibernateNotification = (schedule, storeKey, schedulerType) => {
     window.webContents.send("show-notification", {
       schedule,
       schedulerType,
-      isBoot: storeKey === CONSTANTS.STORE_BOOT_KEY,
+      storeKey,
     });
     shell.beep();
 
     if (!app.isPackaged) {
-      // window.webContents.openDevTools({ mode: "detach" });
+      window.webContents.openDevTools({ mode: "detach" });
     }
   });
 

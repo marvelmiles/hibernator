@@ -1,16 +1,16 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
-const closeNotification = (filterFromList = true) => {
-  ipcRenderer.invoke("close-notification", filterFromList);
+const closeNotification = (scheduleType, filterFromList = true) => {
+  ipcRenderer.invoke("close-notification", scheduleType, filterFromList);
 };
 
 contextBridge.exposeInMainWorld("notificationApi", {
-  snooze: () => {
-    closeNotification(false);
-    ipcRenderer.invoke("snooze-hibernation");
+  snooze: (scheduleType, storeKey) => {
+    closeNotification(scheduleType, false);
+    ipcRenderer.invoke("snooze-hibernation", scheduleType, storeKey);
   },
   proceed: (schedulerType, payload) => {
-    closeNotification();
+    closeNotification(schedulerType);
     ipcRenderer.invoke("kill-task", schedulerType, payload);
   },
   onShowNotification: (cb) => {
@@ -19,4 +19,7 @@ contextBridge.exposeInMainWorld("notificationApi", {
     });
   },
   closeNotification,
+  helpers(keyName, payload) {
+    return ipcRenderer.invoke("helpers", keyName, payload);
+  },
 });

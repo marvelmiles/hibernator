@@ -1,7 +1,6 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("electronApi", {
-  getStore: (type) => ipcRenderer.invoke("get-store", type),
   hibernate: {
     addSchedule: (type, s) => ipcRenderer.invoke("add-hib-schedule", type, s),
     cancelSchedule: (type, id) =>

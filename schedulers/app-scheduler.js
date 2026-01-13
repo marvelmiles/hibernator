@@ -1,11 +1,11 @@
 const { openWindows } = require("get-windows");
 const CONSTANTS = require("../config/constants");
-const Scheduler = require("./scheduler");
 const { createSchedulerStoreKey } = require("../utils/helper");
 const { exec } = require("child_process");
 const { default: fkill } = require("fkill");
+const JobScheduler = require("./job-scheduler");
 
-class AppScheduler extends Scheduler {
+class AppScheduler extends JobScheduler {
   constructor(store) {
     super(store, CONSTANTS.SCHEDULER_APP);
   }
@@ -41,6 +41,8 @@ class AppScheduler extends Scheduler {
 
       windows.forEach((window) => {
         this.findSchedule(window.owner.name, (s) => {
+          if (s.disable) return;
+
           if (this.activeSchedule) this.addToQueue(s);
           else this.scheduleShouldShowNotification(s, CONSTANTS.STORE_BOOT_KEY);
         });

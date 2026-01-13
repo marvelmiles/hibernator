@@ -135,6 +135,8 @@ class Scheduler {
     schedule = {
       disable: false,
       ...schedule,
+      payload: "",
+      snoozeCount: 0,
       completedTask: [],
       id: uniqId(),
     };
